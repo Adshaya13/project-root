@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(20, 184, 166, 0.22), transparent 40%),
+    radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.18), transparent 35%),
+    #020617;
+}
