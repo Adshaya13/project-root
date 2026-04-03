@@ -1,0 +1,13 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "java",
+			"name": "Launch Backend",
+			"request": "launch",
+			"mainClass": "com.backend.backend.AppApplication",
+			"cwd": "${workspaceFolder}/backend",
+			"console": "integratedTerminal"
+		}
+	]
+}
