@@ -1,0 +1,94 @@
+{
+  "properties": [
+    {
+      "name": "app.jwt.secret",
+      "type": "java.lang.String",
+      "description": "JWT signing secret used by the backend."
+    },
+    {
+      "name": "app.jwt.expiration-minutes",
+      "type": "java.lang.Long",
+      "description": "JWT expiration time in minutes."
+    },
+    {
+      "name": "app.application-name",
+      "type": "java.lang.String",
+      "description": "Display name of the application."
+    },
+    {
+      "name": "app.bootstrap.admin-name",
+      "type": "java.lang.String",
+      "description": "Seed admin full name."
+    },
+    {
+      "name": "app.bootstrap.admin-email",
+      "type": "java.lang.String",
+      "description": "Seed admin email address."
+    },
+    {
+      "name": "app.bootstrap.admin-password",
+      "type": "java.lang.String",
+      "description": "Seed admin password."
+    },
+    {
+      "name": "app.bootstrap.student-name",
+      "type": "java.lang.String",
+      "description": "Seed student full name."
+    },
+    {
+      "name": "app.bootstrap.student-email",
+      "type": "java.lang.String",
+      "description": "Seed student email address."
+    },
+    {
+      "name": "app.bootstrap.student-phone",
+      "type": "java.lang.String",
+      "description": "Seed student phone number."
+    },
+    {
+      "name": "app.bootstrap.student-password",
+      "type": "java.lang.String",
+      "description": "Seed student password."
+    },
+    {
+      "name": "app.bootstrap.staff-name",
+      "type": "java.lang.String",
+      "description": "Seed staff full name."
+    },
+    {
+      "name": "app.bootstrap.staff-email",
+      "type": "java.lang.String",
+      "description": "Seed staff email address."
+    },
+    {
+      "name": "app.bootstrap.staff-phone",
+      "type": "java.lang.String",
+      "description": "Seed staff phone number."
+    },
+    {
+      "name": "app.bootstrap.staff-password",
+      "type": "java.lang.String",
+      "description": "Seed staff password."
+    },
+    {
+      "name": "app.cors-origins",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of allowed CORS origins."
+    },
+    {
+      "name": "app.google.client-id",
+      "type": "java.lang.String",
+      "description": "Google OAuth client ID."
+    },
+    {
+      "name": "app.google.client-secret",
+      "type": "java.lang.String",
+      "description": "Google OAuth client secret."
+    },
+    {
+      "name": "app.google.redirect-uri",
+      "type": "java.lang.String",
+      "description": "Google OAuth redirect URI."
+    }
+  ]
+}
