@@ -4,6 +4,11 @@ import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
 @SpringBootApplication
 public class BackendApplication {
 
@@ -13,15 +18,28 @@ public class BackendApplication {
     }
 
     private static void loadDotenvIntoSystemProperties() {
-        Dotenv dotenv = Dotenv.configure()
-                .ignoreIfMalformed()
-                .ignoreIfMissing()
-                .load();
-
-        dotenv.entries().forEach(entry -> {
-            if (System.getenv(entry.getKey()) == null && System.getProperty(entry.getKey()) == null) {
-                System.setProperty(entry.getKey(), entry.getValue());
+        for (Path envFile : List.of(
+                Paths.get(".env"),
+                Paths.get("backend", ".env"),
+                Paths.get("..", "backend", ".env")
+        )) {
+            if (!Files.isRegularFile(envFile)) {
+                continue;
             }
-        });
+
+            Dotenv dotenv = Dotenv.configure()
+                    .directory(envFile.getParent().toAbsolutePath().toString())
+                    .filename(envFile.getFileName().toString())
+                    .ignoreIfMalformed()
+                    .ignoreIfMissing()
+                    .load();
+
+            dotenv.entries().forEach(entry -> {
+                if (System.getenv(entry.getKey()) == null && System.getProperty(entry.getKey()) == null) {
+                    System.setProperty(entry.getKey(), entry.getValue());
+                }
+            });
+            return;
+        }
     }
 }
