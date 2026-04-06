@@ -1,23 +1,73 @@
-@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
+@layer base {
+  :root {
+    --background: 219 47% 97%;
+    --foreground: 222 47% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 12%;
+    --primary: 222 62% 16%;
+    --primary-foreground: 48 100% 96%;
+    --secondary: 48 95% 55%;
+    --secondary-foreground: 222 62% 14%;
+    --muted: 218 32% 93%;
+    --muted-foreground: 217 13% 42%;
+    --accent: 200 94% 53%;
+    --accent-foreground: 222 62% 12%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 26% 86%;
+    --input: 217 26% 86%;
+    --ring: 222 62% 16%;
+    --radius: 1rem;
+  }
 
-* {
-  box-sizing: border-box;
-}
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+    --card: 222 40% 12%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 40% 12%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 48 95% 55%;
+    --primary-foreground: 222 62% 12%;
+    --secondary: 222 45% 18%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 30% 18%;
+    --muted-foreground: 214 20% 68%;
+    --accent: 200 94% 53%;
+    --accent-foreground: 222 62% 12%;
+    --border: 222 30% 22%;
+    --input: 222 30% 22%;
+    --ring: 48 95% 55%;
+  }
 
-html,
-body,
-#root {
-  min-height: 100%;
-  margin: 0;
-}
+  * {
+    border-color: hsl(var(--border));
+  }
 
-body {
-  background:
-    radial-gradient(circle at 20% 20%, rgba(20, 184, 166, 0.22), transparent 40%),
-    radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.18), transparent 35%),
-    #020617;
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    margin: 0;
+    font-family: "Inter", system-ui, sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(234, 179, 8, 0.12), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.14), transparent 30%),
+      hsl(var(--background));
+  }
+
+  .font-display {
+    font-family: "Playfair Display", Georgia, serif;
+  }
 }

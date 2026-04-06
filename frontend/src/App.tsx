@@ -1,31 +1,29 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Toaster } from "sonner";
+import { AuthProvider } from "@/context/AuthContext";
+import Index from "./pages/Index";
+import AdminDashboard from "./pages/dashboards/admin/AdminDashboard";
+import StaffDashboard from "./pages/dashboards/staff/StaffDashboard";
+import StudentDashboard from "./pages/dashboards/student/StudentDashboard";
+import NotFound from "./pages/NotFound";
+
 function App() {
   return (
-    <main className="min-h-screen px-6 py-16 text-slate-100">
-      <section className="mx-auto max-w-5xl rounded-3xl border border-white/10 bg-black/30 p-10 shadow-2xl backdrop-blur-md">
-        <p className="mb-4 inline-flex rounded-full border border-cyan-300/40 bg-cyan-400/10 px-4 py-1 text-sm font-medium text-cyan-200">
-          Vite + React + TypeScript + Tailwind CSS
-        </p>
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Frontend setup complete
-        </h1>
-        <p className="mt-4 max-w-2xl text-base text-slate-300 sm:text-lg">
-          Your frontend now runs on Node.js tooling with Vite, TypeScript, and
-          Tailwind configured globally.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <span className="rounded-lg bg-emerald-500/20 px-3 py-2 text-sm text-emerald-200">
-            Fast HMR
-          </span>
-          <span className="rounded-lg bg-sky-500/20 px-3 py-2 text-sm text-sky-200">
-            Typed components
-          </span>
-          <span className="rounded-lg bg-amber-500/20 px-3 py-2 text-sm text-amber-200">
-            Utility-first styling
-          </span>
-        </div>
-      </section>
-    </main>
-  )
+    <AuthProvider>
+      <Toaster richColors position="top-right" />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Navigate to="/" replace />} />
+          <Route path="/dashboard/admin" element={<AdminDashboard />} />
+          <Route path="/dashboard/staff" element={<StaffDashboard />} />
+          <Route path="/dashboard/student" element={<StudentDashboard />} />
+          <Route path="/dashboard/:role" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
