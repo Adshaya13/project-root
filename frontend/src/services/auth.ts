@@ -13,6 +13,32 @@ import type {
 
 const STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, "-")}-session`;
 
+function normalizeRole(role: unknown): "admin" | "student" | "staff" {
+  const normalized = String(role ?? "").toLowerCase();
+  if (normalized === "admin" || normalized === "student" || normalized === "staff") {
+    return normalized;
+  }
+
+  return "student";
+}
+
+function normalizeSession(session: AuthSession): AuthSession {
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      role: normalizeRole(session.user.role),
+    },
+  };
+}
+
+function normalizeDashboard(data: DashboardData): DashboardData {
+  return {
+    ...data,
+    role: normalizeRole(data.role),
+  };
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
@@ -44,7 +70,7 @@ export const authStorage = {
     }
 
     try {
-      return JSON.parse(raw) as AuthSession;
+      return normalizeSession(JSON.parse(raw) as AuthSession);
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
       return null;
@@ -60,7 +86,7 @@ export const authStorage = {
       return;
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeSession(session)));
   },
 };
 
@@ -73,7 +99,7 @@ export const authApi = {
     return request<AuthSession>("/auth/login", {
       method: "POST",
       body: JSON.stringify(payload),
-    });
+    }).then(normalizeSession);
   },
   requestRegistrationOtp(payload: SignupRequest) {
     return request<OtpReceipt>("/auth/register/request-otp", {
@@ -85,7 +111,7 @@ export const authApi = {
     return request<AuthSession>("/auth/register/verify", {
       method: "POST",
       body: JSON.stringify(payload),
-    });
+    }).then(normalizeSession);
   },
   requestPasswordResetOtp(payload: ForgotPasswordRequest) {
     return request<OtpReceipt>("/auth/forgot-password/request-otp", {
@@ -97,19 +123,19 @@ export const authApi = {
     return request<AuthSession>("/auth/forgot-password/reset", {
       method: "POST",
       body: JSON.stringify(payload),
-    });
+    }).then(normalizeSession);
   },
   googleAuth(payload: GoogleAuthRequest) {
     return request<AuthSession>("/auth/google", {
       method: "POST",
       body: JSON.stringify(payload),
-    });
+    }).then(normalizeSession);
   },
   getDashboard(token: string, role?: string) {
     const suffix = role ? `/dashboard/${role}` : "/dashboard/me";
     return request<DashboardData>(suffix, {
       method: "GET",
       headers: authHeaders(token),
-    });
+    }).then(normalizeDashboard);
   },
 };

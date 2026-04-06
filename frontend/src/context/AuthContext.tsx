@@ -63,7 +63,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSessionState(nextSession);
         return nextSession;
       },
-      logout: () => setSessionState(null),
+      logout: () => {
+        authStorage.write(null);
+        setSessionState(null);
+      },
     }),
     [session],
   );
