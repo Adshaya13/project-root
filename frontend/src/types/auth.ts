@@ -55,10 +55,8 @@ export interface ResetPasswordRequest {
 }
 
 export interface GoogleAuthRequest {
-  email: string;
-  fullName: string;
-  role?: Role;
-  googleSubject?: string;
+  accessToken: string;
+  role: Exclude<Role, "admin">;
 }
 
 export interface DashboardMetric {

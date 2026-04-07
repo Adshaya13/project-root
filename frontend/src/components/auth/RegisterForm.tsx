@@ -1,11 +1,14 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, Mail, Phone, ShieldCheck, User, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import GoogleIcon from "@/components/auth/GoogleIcon";
 import { isValidSriLankaPhone, isValidEmail, isValidPassword } from "@/lib/validations";
-import type { SignupRequest } from "@/types/auth";
+import { getDashboardPath } from "@/lib/dashboard-paths";
+import type { Role, SignupRequest } from "@/types/auth";
+import { GOOGLE_CLIENT_ID } from "@/utils/env";
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
@@ -18,17 +21,19 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const [otp, setOtp] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [googleRole, setGoogleRole] = useState<Exclude<Role, "admin"> | "">("");
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     phone: "",
     gender: "",
-    role: "student",
+    role: "",
     password: "",
     confirmPassword: "",
   });
   const { requestRegistrationOtp, verifyRegistrationOtp, googleAuth } = useAuth();
   const navigate = useNavigate();
+  const isGoogleConfigured = GOOGLE_CLIENT_ID.trim().length > 0;
 
   const registrationPayload = useMemo<SignupRequest>(
     () => ({
@@ -75,6 +80,10 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       errors.gender = "Gender is required";
     }
 
+    if (form.role !== "student" && form.role !== "staff") {
+      errors.role = "Please select Student or Staff";
+    }
+
     if (!form.password) {
       errors.password = "Password is required";
     } else if (!isValidPassword(form.password)) {
@@ -103,7 +112,14 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       setStep("otp");
       toast.success("Six-digit verification code sent to your email");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to start registration");
+      const message = error instanceof Error ? error.message : "Unable to start registration";
+      if (message.toLowerCase().includes("already exists")) {
+        setValidationErrors((current) => ({
+          ...current,
+          email: "This email is already registered",
+        }));
+      }
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -116,7 +132,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       setIsSubmitting(true);
       const session = await verifyRegistrationOtp({ email: form.email, otp });
       toast.success(`Account verified for ${session.user.fullName}`);
-      navigate(`/dashboard/${session.user.role}`);
+      navigate(getDashboardPath(session.user.role));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to verify account");
     } finally {
@@ -125,102 +141,128 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   };
 
   const handleGoogleRegister = async () => {
-    const email = form.email || window.prompt("Enter your Google email")?.trim();
-    if (!email) {
+    if (!googleRole) {
+      setValidationErrors((current) => ({
+        ...current,
+        googleRole: "Please select Student or Staff",
+      }));
+      toast.error("Select role (Student or Staff) before Google sign-up");
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const session = await googleAuth({
-        email,
-        fullName: form.fullName || email.split("@")[0].replace(/[._-]/g, " "),
-        role: form.role === "staff" ? "staff" : "student",
-        googleSubject: `google-${email.toLowerCase()}`,
-      });
-      toast.success(`Google account linked for ${session.user.fullName}`);
-      navigate(`/dashboard/${session.user.role}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Google sign-up failed");
-    } finally {
-      setIsSubmitting(false);
+    if (!isGoogleConfigured) {
+      toast.error("Google auth is not configured. Set VITE_GOOGLE_CLIENT_ID in frontend .env");
+      return;
     }
+
+    setIsSubmitting(true);
+    startGoogleRegister();
   };
 
+  const startGoogleRegister = useGoogleLogin({
+    scope: "openid email profile",
+    onSuccess: async (tokenResponse) => {
+      if (!googleRole) {
+        setIsSubmitting(false);
+        toast.error("Select role (Student or Staff) before Google sign-up");
+        return;
+      }
+
+      try {
+        const session = await googleAuth({
+          accessToken: tokenResponse.access_token,
+          role: googleRole,
+        });
+        toast.success(`Google account linked for ${session.user.fullName}`);
+        navigate(getDashboardPath(session.user.role));
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Google sign-up failed");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    onError: () => {
+      setIsSubmitting(false);
+      toast.error("Google sign-up failed");
+    },
+  });
+
   return (
-    <div>
+    <div className="mx-auto w-full max-w-xl">
       <div className="mb-6 text-center">
         <h1 className="font-display mb-2 text-3xl font-bold text-foreground">Create Account</h1>
         <p className="font-body text-sm text-muted-foreground">Join our university community today</p>
       </div>
 
-      <form onSubmit={step === "details" ? handleRequestOtp : handleVerifyOtp} className="space-y-4">
+      <form onSubmit={step === "details" ? handleRequestOtp : handleVerifyOtp} className="space-y-5">
         {step === "details" ? (
           <>
-            <label className="block space-y-2">
-              <span className="font-body text-sm font-medium text-foreground">Full Name</span>
-              <div className="relative">
-                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  value={form.fullName}
-                  onChange={(event) => update("fullName", event.target.value)}
-                  placeholder="John Doe"
-                  className="h-11 w-full rounded-md border-border bg-muted/50 pl-10 pr-4 font-body text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                  required
-                />
-              </div>
-            </label>
-
-            <label className="block space-y-2">
-              <span className="font-body text-sm font-medium text-foreground">Email Address</span>
-              <div className="space-y-1">
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(event) => update("email", event.target.value)}
-                    placeholder="student@university.edu"
-                    className={`h-11 w-full rounded-md border-border bg-muted/50 pl-10 pr-4 font-body text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary ${
-                      validationErrors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
-                    }`}
-                    required
-                  />
-                </div>
-                {validationErrors.email && (
-                  <div className="flex items-center gap-1 text-xs text-red-500">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    {validationErrors.email}
-                  </div>
-                )}
-              </div>
-            </label>
-
-            <label className="block space-y-2">
-              <span className="font-body text-sm font-medium text-foreground">Phone Number</span>
-              <div className="space-y-1">
-                <div className="relative">
-                  <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    value={form.phone}
-                    onChange={(event) => update("phone", event.target.value)}
-                    placeholder="+94701234567 or 0701234567"
-                    className={`h-11 w-full rounded-md border-border bg-muted/50 pl-10 pr-4 font-body text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary ${
-                      validationErrors.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
-                    }`}
-                    required
-                  />
-                </div>
-                {validationErrors.phone && (
-                  <div className="flex items-center gap-1 text-xs text-red-500">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    {validationErrors.phone}
-                  </div>
-                )}
-              </div>
-            </label>
-
             <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block space-y-2">
+                <span className="font-body text-sm font-medium text-foreground">Full Name</span>
+                <div className="relative">
+                  <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={form.fullName}
+                    onChange={(event) => update("fullName", event.target.value)}
+                    placeholder="John Doe"
+                    className="h-11 w-full rounded-md border-border bg-muted/50 pl-10 pr-4 font-body text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                    required
+                  />
+                </div>
+              </label>
+
+              <label className="block space-y-2">
+                <span className="font-body text-sm font-medium text-foreground">Email Address</span>
+                <div className="space-y-1">
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={(event) => update("email", event.target.value)}
+                      placeholder="student@university.edu"
+                      className={`h-11 w-full rounded-md border-border bg-muted/50 pl-10 pr-4 font-body text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary ${
+                        validationErrors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                      }`}
+                      required
+                    />
+                  </div>
+                  {validationErrors.email && (
+                    <div className="flex items-center gap-1 text-xs text-red-500">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      {validationErrors.email}
+                    </div>
+                  )}
+                </div>
+              </label>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <label className="block space-y-2 sm:col-span-2">
+                <span className="font-body text-sm font-medium text-foreground">Phone Number</span>
+                <div className="space-y-1">
+                  <div className="relative">
+                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={form.phone}
+                      onChange={(event) => update("phone", event.target.value)}
+                      placeholder="+94701234567 or 0701234567"
+                      className={`h-11 w-full rounded-md border-border bg-muted/50 pl-10 pr-4 font-body text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary ${
+                        validationErrors.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                      }`}
+                      required
+                    />
+                  </div>
+                  {validationErrors.phone && (
+                    <div className="flex items-center gap-1 text-xs text-red-500">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      {validationErrors.phone}
+                    </div>
+                  )}
+                </div>
+              </label>
+
               <label className="block space-y-2">
                 <span className="font-body text-sm font-medium text-foreground">Gender</span>
                 <select
@@ -235,19 +277,30 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
                   <option value="other">Other</option>
                 </select>
               </label>
+            </div>
 
-              <label className="block space-y-2">
-                <span className="font-body text-sm font-medium text-foreground">Role</span>
+            <label className="block space-y-2">
+              <span className="font-body text-sm font-medium text-foreground">Register Role</span>
+              <div className="space-y-1">
                 <select
                   value={form.role}
                   onChange={(event) => update("role", event.target.value)}
-                  className="h-11 w-full rounded-md border-border bg-muted/50 px-4 font-body text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
+                  className={`h-11 w-full rounded-md border-border bg-muted/50 px-4 font-body text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary ${
+                    validationErrors.role ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                  }`}
                 >
+                  <option value="">Select role</option>
                   <option value="student">Student</option>
                   <option value="staff">Staff</option>
                 </select>
-              </label>
-            </div>
+                {validationErrors.role && (
+                  <div className="flex items-center gap-1 text-xs text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {validationErrors.role}
+                  </div>
+                )}
+              </div>
+            </label>
 
             <label className="block space-y-2">
               <span className="font-body text-sm font-medium text-foreground">Create Password</span>
@@ -372,10 +425,40 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           </div>
         </div>
 
+        <label className="block space-y-2">
+          <span className="font-body text-sm font-medium text-foreground">Google Role</span>
+          <div className="space-y-1">
+            <select
+              value={googleRole}
+              onChange={(event) => {
+                setGoogleRole(event.target.value as Exclude<Role, "admin"> | "");
+                setValidationErrors((current) => {
+                  const next = { ...current };
+                  delete next.googleRole;
+                  return next;
+                });
+              }}
+              className={`h-11 w-full rounded-md border-border bg-muted/50 px-4 font-body text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary ${
+                validationErrors.googleRole ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+              }`}
+            >
+              <option value="">Select role first</option>
+              <option value="student">Student</option>
+              <option value="staff">Staff</option>
+            </select>
+            {validationErrors.googleRole && (
+              <div className="flex items-center gap-1 text-xs text-red-500">
+                <AlertCircle className="h-3.5 w-3.5" />
+                {validationErrors.googleRole}
+              </div>
+            )}
+          </div>
+        </label>
+
         <button
           type="button"
           onClick={handleGoogleRegister}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isGoogleConfigured || !googleRole}
           className="inline-flex h-11 w-full items-center justify-center rounded-md border border-border bg-background px-5 font-body text-sm font-medium text-foreground transition-all duration-300 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-70"
         >
           <GoogleIcon />

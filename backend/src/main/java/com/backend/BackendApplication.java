@@ -27,8 +27,13 @@ public class BackendApplication {
                 continue;
             }
 
+            Path absoluteEnvFile = envFile.toAbsolutePath();
+            Path envDirectory = absoluteEnvFile.getParent() == null
+                ? Paths.get(".").toAbsolutePath()
+                : absoluteEnvFile.getParent();
+
             Dotenv dotenv = Dotenv.configure()
-                    .directory(envFile.getParent().toAbsolutePath().toString())
+                .directory(envDirectory.toString())
                     .filename(envFile.getFileName().toString())
                     .ignoreIfMalformed()
                     .ignoreIfMissing()

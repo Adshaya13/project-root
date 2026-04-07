@@ -1,13 +1,11 @@
 package com.backend.dto.auth;
 
 import com.backend.model.Role;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record GoogleAuthRequest(
-        @NotBlank @Email String email,
-        @NotBlank String fullName,
-        Role role,
-        String googleSubject
+        @NotBlank String accessToken,
+        @NotNull Role role
 ) {
 }
