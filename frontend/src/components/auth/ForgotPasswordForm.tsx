@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { getDashboardPath } from "@/lib/dashboard-paths";
 
 interface ForgotPasswordFormProps {
   onSwitchToLogin: () => void;
@@ -45,7 +46,7 @@ export default function ForgotPasswordForm({ onSwitchToLogin }: ForgotPasswordFo
       setIsSubmitting(true);
       const session = await resetPassword({ email, otp, newPassword });
       toast.success(`Password updated for ${session.user.fullName}`);
-      navigate(`/dashboard/${session.user.role}`);
+      navigate(getDashboardPath(session.user.role));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to reset password");
     } finally {

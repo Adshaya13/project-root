@@ -1,10 +1,13 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, LogIn, Lock, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import GoogleIcon from "@/components/auth/GoogleIcon";
+import { getDashboardPath } from "@/lib/dashboard-paths";
 import type { Role } from "@/types/auth";
+import { GOOGLE_CLIENT_ID } from "@/utils/env";
 
 interface LoginFormProps {
   onSwitchToRegister: () => void;
@@ -15,20 +18,40 @@ export default function LoginForm({ onSwitchToRegister, onSwitchToForgot }: Logi
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [googleRole, setGoogleRole] = useState<Exclude<Role, "admin"> | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, googleAuth } = useAuth();
   const navigate = useNavigate();
 
-  const suggestedRole = useMemo<Role>(() => {
-    const lower = email.toLowerCase();
-    if (lower.includes("admin")) {
-      return "admin";
-    }
-    if (lower.includes("staff")) {
-      return "staff";
-    }
-    return "student";
-  }, [email]);
+  const isGoogleConfigured = GOOGLE_CLIENT_ID.trim().length > 0;
+
+  const startGoogleLogin = useGoogleLogin({
+    scope: "openid email profile",
+    onSuccess: async (tokenResponse) => {
+      if (!googleRole) {
+        setIsSubmitting(false);
+        toast.error("Choose Student or Staff before Google sign-in");
+        return;
+      }
+
+      try {
+        const session = await googleAuth({
+          accessToken: tokenResponse.access_token,
+          role: googleRole,
+        });
+        toast.success(`Google sign-in connected for ${session.user.fullName}`);
+        navigate(getDashboardPath(session.user.role));
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Google sign-in failed");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    onError: () => {
+      setIsSubmitting(false);
+      toast.error("Google sign-in failed");
+    },
+  });
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -37,7 +60,7 @@ export default function LoginForm({ onSwitchToRegister, onSwitchToForgot }: Logi
       setIsSubmitting(true);
       const session = await login({ email, password });
       toast.success(`Welcome back, ${session.user.fullName}`);
-      navigate(`/dashboard/${session.user.role}`);
+      navigate(getDashboardPath(session.user.role));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to sign in");
     } finally {
@@ -46,25 +69,22 @@ export default function LoginForm({ onSwitchToRegister, onSwitchToForgot }: Logi
   };
 
   const handleGoogleSignIn = async () => {
-    const googleEmail = email || window.prompt("Enter your Google email")?.trim();
-    if (!googleEmail) {
+    if (!googleRole) {
+      toast.error("Choose Student or Staff before Google sign-in");
+      return;
+    }
+
+    if (!isGoogleConfigured) {
+      toast.error("Google auth is not configured. Set VITE_GOOGLE_CLIENT_ID in frontend .env");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const session = await googleAuth({
-        email: googleEmail,
-        fullName: googleEmail.split("@")[0].replace(/[._-]/g, " "),
-        role: suggestedRole,
-        googleSubject: `google-${googleEmail.toLowerCase()}`,
-      });
-      toast.success(`Google sign-in connected for ${session.user.fullName}`);
-      navigate(`/dashboard/${session.user.role}`);
+      startGoogleLogin();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Google sign-in failed");
-    } finally {
       setIsSubmitting(false);
+      toast.error(error instanceof Error ? error.message : "Google sign-in failed");
     }
   };
 
@@ -141,10 +161,23 @@ export default function LoginForm({ onSwitchToRegister, onSwitchToForgot }: Logi
           </div>
         </div>
 
+        <label className="block space-y-2">
+          <span className="font-body text-sm font-medium text-foreground">Google Role</span>
+          <select
+            value={googleRole}
+            onChange={(event) => setGoogleRole(event.target.value as Exclude<Role, "admin"> | "")}
+            className="h-12 w-full rounded-md border-border bg-muted/50 px-4 font-body text-foreground outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Select role first</option>
+            <option value="student">Student</option>
+            <option value="staff">Staff</option>
+          </select>
+        </label>
+
         <button
           type="button"
           onClick={handleGoogleSignIn}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isGoogleConfigured}
           className="inline-flex h-12 w-full items-center justify-center rounded-md border border-border bg-background px-5 font-body text-sm font-medium text-foreground transition-all duration-300 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-70"
         >
           <GoogleIcon />

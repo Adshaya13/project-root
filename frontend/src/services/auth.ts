@@ -14,7 +14,10 @@ import type {
 const STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, "-")}-session`;
 
 function normalizeRole(role: unknown): "admin" | "student" | "staff" {
-  const normalized = String(role ?? "").toLowerCase();
+  const normalized = String(role ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^role_/, "");
   if (normalized === "admin" || normalized === "student" || normalized === "staff") {
     return normalized;
   }
@@ -104,7 +107,10 @@ export const authApi = {
   requestRegistrationOtp(payload: SignupRequest) {
     return request<OtpReceipt>("/auth/register/request-otp", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        role: payload.role.toUpperCase(),
+      }),
     });
   },
   verifyRegistrationOtp(payload: VerifySignupRequest) {
@@ -128,7 +134,10 @@ export const authApi = {
   googleAuth(payload: GoogleAuthRequest) {
     return request<AuthSession>("/auth/google", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        role: payload.role.toUpperCase(),
+      }),
     }).then(normalizeSession);
   },
   getDashboard(token: string, role?: string) {

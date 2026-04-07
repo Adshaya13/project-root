@@ -32,19 +32,22 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final ObjectMapper objectMapper;
+    private final GoogleIdentityService googleIdentityService;
 
     public AuthService(
             UserRepository userRepository,
             OtpService otpService,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            GoogleIdentityService googleIdentityService
     ) {
         this.userRepository = userRepository;
         this.otpService = otpService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.objectMapper = objectMapper;
+        this.googleIdentityService = googleIdentityService;
     }
 
     public OtpResponse requestRegistrationOtp(SignupOtpRequest request) {
@@ -71,7 +74,11 @@ public class AuthService {
         var token = otpService.verifyOtp(email, OtpPurpose.REGISTRATION, request.otp());
         PendingRegistrationPayload payload = deserialize(token.getPayloadJson());
 
-        User user = userRepository.findByEmail(email).orElseGet(User::new);
+        if (userRepository.existsByEmail(email)) {
+            throw new ApiException(HttpStatus.CONFLICT, "An account already exists for that email");
+        }
+
+        User user = new User();
         user.setFullName(payload.fullName());
         user.setEmail(payload.email());
         user.setPhone(payload.phone());
@@ -90,6 +97,10 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
 
+        if (!user.isEnabled()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "This account has been restricted");
+        }
+
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
@@ -100,7 +111,7 @@ public class AuthService {
     public OtpResponse requestPasswordResetOtp(ForgotPasswordRequest request) {
         String email = normalize(request.email());
         if (!userRepository.existsByEmail(email)) {
-            return new OtpResponse("If the email exists, a reset code was sent", email, Instant.now().plusSeconds(600));
+            throw new ApiException(HttpStatus.NOT_FOUND, "Email is not registered");
         }
 
         otpService.issueOtp(email, OtpPurpose.PASSWORD_RESET, null);
@@ -114,6 +125,10 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No user found for that email"));
 
+        if (!user.isEnabled()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "This account has been restricted");
+        }
+
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         user.setEmailVerified(true);
         User saved = userRepository.save(user);
@@ -121,34 +136,42 @@ public class AuthService {
     }
 
     public AuthResponse googleAuth(GoogleAuthRequest request) {
-        String email = normalize(request.email());
-        Role role = request.role() == null ? Role.STUDENT : request.role();
+        Role role = request.role();
+        if (role == Role.ADMIN) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Google sign-in is available for student and staff accounts only");
+        }
+
+        GoogleIdentityService.GoogleIdentity googleIdentity = googleIdentityService.verifyAccessToken(request.accessToken());
+        String email = normalize(googleIdentity.email());
 
         User user = userRepository.findByEmail(email).orElseGet(() -> {
             User created = new User();
             created.setEmail(email);
-            created.setFullName(request.fullName().trim());
+            created.setFullName(googleIdentity.name());
             created.setPhone("+0000000000");
             created.setGender("unspecified");
             created.setRole(role);
             created.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
             created.setEmailVerified(true);
             created.setGoogleAccount(true);
-            created.setGoogleSubject(request.googleSubject());
+            created.setGoogleSubject(googleIdentity.subject());
             return created;
         });
+        boolean newlyCreated = user.getId() == null;
 
-        user.setFullName(request.fullName().trim());
+        if (!user.isEnabled()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "This account has been restricted");
+        }
+
+        user.setFullName(googleIdentity.name());
         user.setGoogleAccount(true);
         user.setEmailVerified(true);
-        if (request.googleSubject() != null && !request.googleSubject().isBlank()) {
-            user.setGoogleSubject(request.googleSubject().trim());
-        }
+        user.setGoogleSubject(googleIdentity.subject());
         if (user.getRole() == null) {
             user.setRole(role);
         }
 
-        return issueSession(userRepository.save(user), !userRepository.existsByEmail(email));
+        return issueSession(userRepository.save(user), newlyCreated);
     }
 
     public UserResponse me(String email) {
