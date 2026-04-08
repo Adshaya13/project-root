@@ -1,0 +1,17 @@
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/exception/GlobalExceptionHandler.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/exception/BadRequestException.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/config/SecurityConfig.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/security/JwtTokenProvider.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/controller/AuthController.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/model/User.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/SmartCampusApplication.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/controller/ResourceController.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/security/OAuth2SuccessHandler.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/model/Resource.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/dto/ApiResponse.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/dto/ResourceDTO.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/repository/UserRepository.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/config/MongoConfig.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/repository/ResourceRepository.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/exception/ResourceNotFoundException.java
+/Users/arun/Documents/Campus HUB/backend/src/main/java/com/smartcampus/service/ResourceService.java
