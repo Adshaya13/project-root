@@ -6,25 +6,25 @@ export const TextParallaxContentExample = () => {
   return (
     <div className="bg-white">
       <TextParallaxContent
-        imgUrl="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2671&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-        subheading="Collaborate"
-        heading="Built for all of us."
+        imgUrl="/images/hero1.png"
+        subheading="Smart Campus"
+        heading="Manage campus. Simplify operations."
       >
-        <ExampleContent />
+        <ExampleContent title="The Future of University Operations" showImage />
       </TextParallaxContent>
       <TextParallaxContent
-        imgUrl="https://images.unsplash.com/photo-1530893609608-32a9af3aa95c?q=80&w=2564&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-        subheading="Quality"
-        heading="Never compromise."
+        imgUrl="/images/hero2.png"
+        subheading="Facilities"
+        heading="Book spaces instantly."
       >
-        <ExampleContent />
+        <ExampleContent title="Seamless Facility Management" />
       </TextParallaxContent>
       <TextParallaxContent
-        imgUrl="https://images.unsplash.com/photo-1504610926078-a1611febcad3?q=80&w=2416&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-        subheading="Modern"
-        heading="Dress for the best."
+        imgUrl="/images/hero3.png"
+        subheading="Maintenance"
+        heading="Report issues faster."
       >
-        <ExampleContent />
+        <ExampleContent title="Efficient Issue Resolution" />
       </TextParallaxContent>
     </div>
   );
@@ -109,24 +109,34 @@ const OverlayCopy = ({ subheading, heading }) => {
   );
 };
 
-const ExampleContent = () => (
+const ExampleContent = ({ title, showImage = false }) => (
   <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-4 pb-24 pt-12 md:grid-cols-12">
-    <h2 className="col-span-1 text-3xl font-bold md:col-span-4">
-      Additional content explaining the above card here
+    <h2 className="col-span-1 text-3xl font-bold md:col-span-4 font-['Cabinet_Grotesk'] text-slate-900">
+      {title}
     </h2>
     <div className="col-span-1 md:col-span-8">
-      <p className="mb-4 text-xl text-neutral-600 md:text-2xl">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Quasi,
-        blanditiis soluta eius quam modi aliquam quaerat odit deleniti minima
-        maiores voluptate est ut saepe accusantium maxime doloremque nulla
-        consectetur possimus.
+      <p className="mb-4 text-xl text-slate-600 md:text-2xl font-['Manrope']">
+        Campus Hub provides a centralized platform to manage facility bookings, 
+        equipment reservations, and maintenance requests. Students and staff can 
+        easily request resources, report issues, and track updates in real-time.
       </p>
-      <p className="mb-8 text-xl text-neutral-600 md:text-2xl">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Accusantium
-        reiciendis blanditiis aliquam aut fugit sint.
+      <p className="mb-8 text-xl text-slate-600 md:text-2xl font-['Manrope']">
+        The system improves campus productivity by reducing manual processes and 
+        ensuring smooth communication between users and administrators.
       </p>
-      <button className="w-full rounded bg-neutral-900 px-9 py-4 text-xl text-white transition-colors hover:bg-neutral-700 md:w-fit">
-        Learn more <ArrowUpRight className="inline" />
+      
+      {showImage && (
+        <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl border border-slate-200">
+          <img 
+            src="/images/section.png" 
+            alt="Students using digital dashboard" 
+            className="w-full object-cover h-[300px]"
+          />
+        </div>
+      )}
+
+      <button className="w-full rounded-xl bg-orange-500 px-9 py-4 text-xl font-semibold text-white transition-colors hover:bg-orange-600 md:w-fit flex items-center justify-center gap-2">
+        Get Started <ArrowUpRight className="w-5 h-5" />
       </button>
     </div>
   </div>

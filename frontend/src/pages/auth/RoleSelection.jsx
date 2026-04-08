@@ -69,12 +69,16 @@ export const RoleSelection = () => {
   };
 
   return (
-    <div className="min-h-screen relative bg-[#0f172a] flex items-center justify-center p-4 overflow-hidden">
-      {/* Background ambient effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-[#1e3a5f] rounded-full blur-[120px] opacity-60" />
-        <div className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] bg-orange-600 rounded-full blur-[120px] opacity-20" />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
+      {/* Background Image & Overlay */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url('/images/login-bg.png')`,
+        }}
+      >
+        <div className="absolute inset-0 bg-[#0f172a]/40 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a5f]/20 via-transparent to-[#f97316]/10" />
       </div>
 
       <div className="relative z-10 max-w-5xl w-full">

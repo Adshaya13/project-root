@@ -34,11 +34,11 @@ export const Login = () => {
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2560&q=80')`,
+          backgroundImage: `url('/images/login-bg.png')`,
         }}
       >
-        <div className="absolute inset-0 bg-[#0f172a]/80 backdrop-blur-md" />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a5f]/40 via-transparent to-[#f97316]/20" />
+        <div className="absolute inset-0 bg-[#0f172a]/40 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a5f]/20 via-transparent to-[#f97316]/10" />
       </div>
 
       {/* Main Content */}
