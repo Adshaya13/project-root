@@ -1,7 +1,11 @@
 package com.backend.config;
 
+import com.backend.model.Resource;
+import com.backend.model.ResourceCategory;
+import com.backend.model.ResourceType;
 import com.backend.model.Role;
 import com.backend.model.User;
+import com.backend.repository.ResourceRepository;
 import com.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -90,5 +94,39 @@ public class DataSeeder {
             staff.setGoogleAccount(false);
             userRepository.save(staff);
         };
+    }
+
+    @Bean
+    CommandLineRunner seedResources(ResourceRepository resourceRepository) {
+        return args -> {
+            seedResource(resourceRepository, "Classroom A-101", ResourceType.CLASSROOM, ResourceCategory.SPACE, "Block A, Floor 1", 40, true);
+            seedResource(resourceRepository, "Lecture Hall 1", ResourceType.LECTURE_HALL, ResourceCategory.SPACE, "Main Academic Building", 120, true);
+            seedResource(resourceRepository, "Computer Lab 2", ResourceType.LAB, ResourceCategory.SPACE, "Engineering Block", 32, true);
+            seedResource(resourceRepository, "Meeting Room 3", ResourceType.MEETING_ROOM, ResourceCategory.SPACE, "Administration Wing", 16, true);
+            seedResource(resourceRepository, "Projector P-01", ResourceType.PROJECTOR, ResourceCategory.EQUIPMENT, "Media Store", 1, true);
+            seedResource(resourceRepository, "Camera C-02", ResourceType.CAMERA, ResourceCategory.EQUIPMENT, "Media Store", 1, true);
+            seedResource(resourceRepository, "Computer C-11", ResourceType.COMPUTER, ResourceCategory.EQUIPMENT, "IT Inventory", 1, true);
+            seedResource(resourceRepository, "Audio System A-07", ResourceType.AUDIO_SYSTEM, ResourceCategory.EQUIPMENT, "Event Support", 1, true);
+        };
+    }
+
+    private void seedResource(
+            ResourceRepository resourceRepository,
+            String name,
+            ResourceType type,
+            ResourceCategory category,
+            String location,
+            Integer capacity,
+            boolean bookable
+    ) {
+        Resource resource = resourceRepository.findByNameIgnoreCase(name).orElseGet(Resource::new);
+        resource.setName(name);
+        resource.setType(type);
+        resource.setCategory(category);
+        resource.setLocation(location);
+        resource.setCapacity(capacity);
+        resource.setActive(true);
+        resource.setBookable(bookable);
+        resourceRepository.save(resource);
     }
 }
