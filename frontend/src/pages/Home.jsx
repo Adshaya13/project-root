@@ -4,22 +4,30 @@ import { Link } from 'react-router-dom';
 
 export const Home = () => {
   return (
-    <div className="relative min-h-screen bg-slate-950 font-sans">
+    <div className="relative min-h-screen bg-white font-sans">
       {/* Navigation Bar */}
-      <nav className="absolute top-0 w-full z-50 flex items-center justify-between px-6 py-4 lg:px-12 backdrop-blur-md bg-slate-950/50 border-b border-slate-800">
-        <div className="text-2xl font-bold tracking-tighter text-white">Campus HUB</div>
+      <nav className="fixed top-0 w-full z-50 flex items-center justify-between px-6 py-4 lg:px-12 backdrop-blur-md bg-white/80 border-b border-slate-200">
+        <div className="flex items-center gap-12">
+          <div className="text-2xl font-bold tracking-tighter text-orange-500 font-['Cabinet_Grotesk']">Campus HUB</div>
+          <div className="hidden md:flex items-center gap-6">
+            <a href="#" className="text-sm font-medium text-slate-600 hover:text-orange-500 transition-colors">Features</a>
+            <a href="#" className="text-sm font-medium text-slate-600 hover:text-orange-500 transition-colors">Pricing</a>
+            <a href="#" className="text-sm font-medium text-slate-600 hover:text-orange-500 transition-colors">About Us</a>
+            <a href="#" className="text-sm font-medium text-slate-600 hover:text-orange-500 transition-colors">Support</a>
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           <Link
             to="/login"
-            className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
+            className="text-sm font-medium text-slate-600 transition-colors hover:text-orange-500"
           >
             Log in
           </Link>
           <Link
             to="/role-selection"
-            className="rounded-full bg-white px-5 py-2 text-sm font-medium text-slate-950 transition-transform hover:scale-105"
+            className="rounded-full bg-orange-500 px-5 py-2 text-sm font-bold text-white transition-transform hover:scale-105 shadow-md shadow-orange-500/20"
           >
-            Get Started
+            Dashboard
           </Link>
         </div>
       </nav>

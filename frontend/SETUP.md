@@ -25,6 +25,13 @@ Or using **yarn** (if you have it installed):
 yarn install
 ```
 
+### Important Dependencies Added:
+We have integrated some modern UI libraries to enhance the user experience:
+- **framer-motion**: For high-quality animations and parallax effects.
+- **lucide-react**: Our primary icon library for a clean, consistent look.
+- **shadcn/ui**: A collection of high-performance, accessible UI components.
+- **Magic UI (BorderBeam)**: Used for premium visual effects like the glowing borders on login cards.
+
 ## 2. Running the Development Server
 
 To start the application locally and see your changes in real-time, run the following command in the `frontend` folder:
@@ -40,14 +47,18 @@ yarn start
 ```
 
 This command will start the development server. 
-- Open your browser and navigate to **`http://localhost:3000`** to view the application.
+- Open your browser and navigate to **`http://localhost:3000`** to view the **Landing Page**.
 - The page will automatically reload if you make edits to the code.
 - You will see any lint errors or compilation warnings in the terminal window.
 
 ## 3. Project Structure Highlights
+
 If you're jumping in to make edits, here are where the important files live:
-- `src/pages/`: Contains the main views (e.g., Auth, Dashboard, Resources).
-- `src/components/`: Reusable UI components.
+- `src/pages/Home.jsx`: The new premium landing page with parallax scrolling.
+- `src/pages/auth/Login.jsx`: Updated login page with glassmorphism and animated borders.
+- `src/components/ui/`: Contains shadcn and custom UI components (Parallax, Cards, Buttons, etc.).
+- `src/registry/magicui/`: Custom animation components like `BorderBeam`.
+- `public/images/`: Assets for the hero sections and background images.
 - `src/context/`: State management (e.g., AuthContext).
 - `src/services/`: API configuration and service calls connecting to our backend.
 
