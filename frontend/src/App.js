@@ -12,6 +12,7 @@ import { BrowseResources } from './pages/resources/BrowseResources';
 import { ResourceDetail } from './pages/resources/ResourceDetail';
 import { MyBookings } from './pages/bookings/MyBookings';
 import { MyTickets } from './pages/tickets/MyTickets';
+import { Home } from './pages/Home';
 import { CreateTicket } from './pages/tickets/CreateTicket';
 import { TicketDetail } from './pages/tickets/TicketDetail';
 import { NotificationsPage } from './pages/notifications/NotificationsPage';
@@ -41,7 +42,7 @@ function AppRouter() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/role-selection" element={<RoleSelection />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Home />} />
 
       {/* USER routes */}
       <Route

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
-import { authService } from '@/services/authService';
-import { getRoleDashboard } from '@/utils/roleHelpers';
+// import { authService } from '@/services/authService';
+// import { getRoleDashboard } from '@/utils/roleHelpers';
 import { LoadingSpinner } from '@/components/common/Spinner';
 import { toast } from 'sonner';
 
@@ -15,6 +15,8 @@ export const AuthCallback = () => {
     if (hasProcessed.current) return;
     hasProcessed.current = true;
 
+    // ---- GOOGLE OAUTH COMMENTED OUT TEMPORARILY ----
+    /*
     const processAuth = async () => {
       try {
         const hash = window.location.hash;
@@ -51,11 +53,27 @@ export const AuthCallback = () => {
     };
 
     processAuth();
-  }, [navigate, login]);
+    */
+
+    // DUMMY: Immediately fail or redirect since we don't use this anymore
+    navigate('/login');
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
-      <LoadingSpinner message="Completing sign in..." />
+    <div className="min-h-screen relative bg-[#0f172a] flex items-center justify-center p-4 overflow-hidden">
+      {/* Background ambient effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#1e3a5f] rounded-full blur-[150px] opacity-40 animate-pulse" />
+      </div>
+      
+      <div className="relative z-10 flex flex-col items-center">
+        <div className="p-8 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col items-center gap-6">
+          <LoadingSpinner message="" />
+          <p className="text-xl font-medium text-white tracking-wide animate-pulse" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
+            Completing sign in...
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
