@@ -1,0 +1,79 @@
+{
+  "theme": "Light",
+  "archetype": "4 (Swiss & High-Contrast)",
+  "colors": {
+    "primary": "#1e3a5f",
+    "accent": "#f97316",
+    "success": "#22c55e",
+    "warning": "#eab308",
+    "danger": "#ef4444",
+    "background": "#f8fafc",
+    "card": "#ffffff",
+    "sidebar": "#1e3a5f",
+    "text_primary": "#0f172a",
+    "text_secondary": "#475569"
+  },
+  "typography": {
+    "font_family": {
+      "heading": "'Cabinet Grotesk', sans-serif",
+      "body": "'Manrope', sans-serif"
+    },
+    "scale": {
+      "h1": "text-4xl sm:text-5xl tracking-tight leading-none font-bold text-slate-900",
+      "h2": "text-2xl sm:text-3xl tracking-tight leading-none font-semibold text-slate-800",
+      "h3": "text-xl sm:text-2xl tracking-tight font-medium text-slate-800",
+      "h4": "text-lg sm:text-xl font-medium text-slate-700",
+      "body": "text-base leading-relaxed text-slate-600",
+      "small": "text-sm text-slate-500",
+      "overline": "text-xs tracking-[0.2em] uppercase font-bold text-orange-500"
+    },
+    "notes": "Do not use Inter. Keep headings tight and bold. Use Manrope for high legibility in the dashboard data."
+  },
+  "spacing_and_layout": {
+    "philosophy": "Generous Spacing Philosophy. Use large padding (p-6, p-8) inside cards.",
+    "dashboard_grid": "Use Mode B: The 'Control Room' Grid. grid-cols-1 md:grid-cols-3 lg:grid-cols-4 with gap-6. Stretch children to match neighbors using h-full.",
+    "container_padding": "p-6 lg:p-8",
+    "border_radius": "rounded-xl for cards and modals. Input elements rounded-lg."
+  },
+  "surface_strategies": {
+    "cards": "Flat solid background (#ffffff), 1px subtle border (border-slate-200), subtle shadow-sm. On hover: -translate-y-1, shadow-md, border-slate-300.",
+    "sidebar": "Deep navy (#1e3a5f) background, no borders needed. Active nav items should have a subtle white/10 background or an orange left-border accent.",
+    "header": "Solid background (bg-slate-50/80 backdrop-blur-md) with 1px border-b border-slate-200.",
+    "badges": "Soft background with high contrast text. E.g., bg-orange-100 text-orange-800."
+  },
+  "components": {
+    "buttons": "Primary: bg-[#1e3a5f] text-white hover:bg-slate-800. Accent: bg-[#f97316] text-white hover:bg-orange-600. Add smooth transition-all duration-200. Add data-testid attributes to all buttons.",
+    "tables": "Use Shadcn Table. Left align data, right align numbers/actions. Row hover: bg-slate-50.",
+    "forms": "Use Shadcn Input, Select. Ensure inputs have ring-orange-500 focus states to tie into the accent color.",
+    "modals": "Use Shadcn Dialog. Max-width 2xl. Include a subtle glassmorphism overlay (bg-slate-900/40 backdrop-blur-sm)."
+  },
+  "motion_and_interaction": {
+    "hover_states": "All buttons/cards must have hover states. transition-all duration-200 ease-in-out.",
+    "focus_states": "Focus states must use ring-2 ring-orange-500 ring-offset-2 ring-offset-white.",
+    "page_transitions": "Framer motion for page entry: opacity 0 to 1, y: 10 to 0."
+  },
+  "media": {
+    "login_hero": {
+      "url": "https://images.unsplash.com/photo-1754573061107-7c8d00c9e662?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjB1bml2ZXJzaXR5JTIwY2FtcHVzJTIwYXJjaGl0ZWN0dXJlJTIwZXh0ZXJpb3J8ZW58MHx8fHwxNzc1NTM2MDQ3fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Modern university campus exterior for the left side of the split login page. Apply a deep navy (bg-[#1e3a5f]/40) overlay to ensure any superimposed text remains readable."
+    },
+    "resource_room_1": {
+      "url": "https://images.unsplash.com/photo-1762176264161-09219da49794?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBsZWN0dXJlJTIwaGFsbCUyMGVtcHR5JTIwZW1wdHklMjBtZWV0aW5nJTIwcm9vbXxlbnwwfHx8fDE3NzU1MzYwNDd8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Modern conference room for resource booking cards."
+    },
+    "resource_room_2": {
+      "url": "https://images.unsplash.com/photo-1762176263996-a0713a49ee4d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBsZWN0dXJlJTIwaGFsbCUyMGVtcHR5JTIwZW1wdHklMjBtZWV0aW5nJTIwcm9vbXxlbnwwfHx8fDE3NzU1MzYwNDd8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Large lecture hall for resource booking cards."
+    },
+    "user_avatar": {
+      "url": "https://images.unsplash.com/photo-1609371497456-3a55a205d5eb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0JTIwZGl2ZXJzZXxlbnwwfHx8fDE3NzU1MzYwNDd8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Default avatar for logged-in user."
+    },
+    "admin_avatar": {
+      "url": "https://images.pexels.com/photos/3894379/pexels-photo-3894379.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Avatar for admin or manager roles."
+    }
+  },
+  "iconography": "lucide-react for standard crisp icons. For the sidebar, use 20px size icons, strokeWidth 2.",
+  "testing": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case."
+}
