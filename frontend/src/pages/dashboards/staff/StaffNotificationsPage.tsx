@@ -1,14 +1,10 @@
 import StaffPageLayout from "./StaffPageLayout";
-import { useStaffBooking } from "@/hooks/useStaffBooking";
 
 export default function StaffNotificationsPage() {
-  const { bookings } = useStaffBooking();
-
   return (
     <StaffPageLayout
       title="Notifications"
       subtitle="Staff Booking Operations"
-      currentBookingCount={bookings.length}
     >
       <div className="flex min-h-full flex-col gap-6">
         <section className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:px-6">

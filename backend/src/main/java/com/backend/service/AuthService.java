@@ -7,6 +7,7 @@ import com.backend.dto.auth.LoginRequest;
 import com.backend.dto.auth.OtpResponse;
 import com.backend.dto.auth.ResetPasswordRequest;
 import com.backend.dto.auth.SignupOtpRequest;
+import com.backend.dto.auth.UpdateProfileRequest;
 import com.backend.dto.auth.UserResponse;
 import com.backend.dto.auth.VerifySignupRequest;
 import com.backend.exception.ApiException;
@@ -177,6 +178,18 @@ public class AuthService {
     public UserResponse me(String email) {
         return toUserResponse(userRepository.findByEmail(normalize(email))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found")));
+    }
+
+    public UserResponse updateProfile(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(normalize(email))
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+
+        user.setFullName(request.fullName().trim());
+        user.setPhone(request.phone().trim());
+        user.setGender(request.gender().trim());
+
+        User updated = userRepository.save(user);
+        return toUserResponse(updated);
     }
 
     private AuthResponse issueSession(User user, boolean newlyCreated) {

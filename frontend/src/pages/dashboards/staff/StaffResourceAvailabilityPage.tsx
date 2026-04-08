@@ -14,7 +14,7 @@ const typeLabel: Record<string, string> = {
 
 export default function StaffResourceAvailabilityPage() {
   const navigate = useNavigate();
-  const { session, resources, bookings } = useStaffBooking();
+  const { session, resources } = useStaffBooking();
   const [availableResources, setAvailableResources] = useState<Resource[]>([]);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityDate, setAvailabilityDate] = useState("");
@@ -85,14 +85,20 @@ export default function StaffResourceAvailabilityPage() {
   }, [availabilityDate, availabilityEndTime, availabilityStartTime, eligibleResources, session]);
 
   const handleBookNow = (resourceId: number) => {
-    navigate("/dashboard/staff/book-resource", { state: { selectedResourceId: resourceId } });
+    navigate("/dashboard/staff/book-resource", {
+      state: {
+        selectedResourceId: resourceId,
+        bookingDate: availabilityDate,
+        startTime: availabilityStartTime,
+        endTime: availabilityEndTime,
+      },
+    });
   };
 
   return (
     <StaffPageLayout
       title="Resource Availability"
       subtitle="Staff Booking Operations"
-      currentBookingCount={bookings.length}
     >
       <div className="flex min-h-full flex-col gap-6">
         <section className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:px-6">

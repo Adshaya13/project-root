@@ -12,6 +12,12 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface UpdateProfileRequest {
+  fullName: string;
+  phone: string;
+  gender: string;
+}
+
 export interface AuthSession {
   token: string;
   expiresAt: string;

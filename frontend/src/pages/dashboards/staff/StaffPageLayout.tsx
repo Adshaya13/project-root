@@ -7,7 +7,6 @@ interface StaffPageLayoutProps {
   title: string;
   subtitle: string;
   children: ReactNode;
-  currentBookingCount?: number;
 }
 
 const navItems = [
@@ -20,7 +19,7 @@ const navItems = [
   { to: "/dashboard/staff/profile", label: "Profile", icon: UserRound },
 ];
 
-export default function StaffPageLayout({ title, subtitle, children, currentBookingCount = 0 }: StaffPageLayoutProps) {
+export default function StaffPageLayout({ title, subtitle, children }: StaffPageLayoutProps) {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -108,10 +107,7 @@ export default function StaffPageLayout({ title, subtitle, children, currentBook
                 <LayoutDashboard className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-slate-900">
-                  {title}
-                  {currentBookingCount > 0 && ` (${currentBookingCount})`}
-                </div>
+                <div className="text-sm font-semibold text-slate-900">{title}</div>
                 <div className="text-[11px] text-blue-700/80">{subtitle}</div>
               </div>
             </div>

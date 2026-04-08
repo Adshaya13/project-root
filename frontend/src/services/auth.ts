@@ -8,6 +8,8 @@ import type {
   OtpReceipt,
   ResetPasswordRequest,
   SignupRequest,
+  UpdateProfileRequest,
+  UserProfile,
   VerifySignupRequest,
 } from "@/types/auth";
 
@@ -146,5 +148,12 @@ export const authApi = {
       method: "GET",
       headers: authHeaders(token),
     }).then(normalizeDashboard);
+  },
+  updateProfile(token: string, payload: UpdateProfileRequest) {
+    return request<UserProfile>("/auth/profile", {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
   },
 };

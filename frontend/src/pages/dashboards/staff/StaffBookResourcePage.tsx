@@ -1,5 +1,5 @@
-import { useState, useMemo, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect, type FormEvent } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { CalendarDays, MapPinned, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import StaffPageLayout from "./StaffPageLayout";
@@ -13,7 +13,8 @@ const typeLabel: Record<string, string> = {
 
 export default function StaffBookResourcePage() {
   const navigate = useNavigate();
-  const { session, resources, bookings, setBookings } = useStaffBooking();
+  const location = useLocation();
+  const { session, resources, setBookings } = useStaffBooking();
   const [selectedResourceId, setSelectedResourceId] = useState<number | "">("");
   const [bookingDate, setBookingDate] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -21,6 +22,31 @@ export default function StaffBookResourcePage() {
   const [purpose, setPurpose] = useState("");
   const [attendees, setAttendees] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const state = location.state as {
+      selectedResourceId?: number;
+      bookingDate?: string;
+      startTime?: string;
+      endTime?: string;
+    } | null;
+
+    if (state?.selectedResourceId) {
+      setSelectedResourceId(state.selectedResourceId);
+    }
+
+    if (state?.bookingDate) {
+      setBookingDate(state.bookingDate);
+    }
+
+    if (state?.startTime) {
+      setStartTime(state.startTime);
+    }
+
+    if (state?.endTime) {
+      setEndTime(state.endTime);
+    }
+  }, [location.state]);
 
   const selectedResource = useMemo(
     () => resources.find((resource) => resource.id === selectedResourceId) ?? null,
@@ -88,7 +114,6 @@ export default function StaffBookResourcePage() {
     <StaffPageLayout
       title="Book Resource"
       subtitle="Staff Booking Operations"
-      currentBookingCount={bookings.length}
     >
       <div className="flex min-h-full flex-col gap-6">
         <section className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:px-6">

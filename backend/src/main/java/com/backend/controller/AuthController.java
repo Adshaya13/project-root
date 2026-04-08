@@ -7,13 +7,16 @@ import com.backend.dto.auth.LoginRequest;
 import com.backend.dto.auth.OtpResponse;
 import com.backend.dto.auth.ResetPasswordRequest;
 import com.backend.dto.auth.SignupOtpRequest;
+import com.backend.dto.auth.UpdateProfileRequest;
 import com.backend.dto.auth.UserResponse;
 import com.backend.dto.auth.VerifySignupRequest;
 import com.backend.service.AuthService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -61,5 +64,13 @@ public class AuthController {
     @GetMapping("/me/{email}")
     public UserResponse me(@PathVariable String email) {
         return authService.me(email);
+    }
+
+    @PutMapping("/profile")
+    public UserResponse updateProfile(
+            @Valid @RequestBody UpdateProfileRequest request,
+            Authentication authentication
+    ) {
+        return authService.updateProfile(authentication.getName(), request);
     }
 }
