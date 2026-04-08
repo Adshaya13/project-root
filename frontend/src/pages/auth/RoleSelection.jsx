@@ -69,23 +69,30 @@ export const RoleSelection = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <div className="max-w-5xl w-full">
+    <div className="min-h-screen relative bg-[#0f172a] flex items-center justify-center p-4 overflow-hidden">
+      {/* Background ambient effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-[#1e3a5f] rounded-full blur-[120px] opacity-60" />
+        <div className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] bg-orange-600 rounded-full blur-[120px] opacity-20" />
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
+      </div>
+
+      <div className="relative z-10 max-w-5xl w-full">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-block px-4 py-2 bg-[#1e3a5f] text-white rounded-full text-sm font-medium mb-4">
-            Welcome to Campus Hub
+          <div className="inline-block px-4 py-2 bg-white/10 border border-white/20 text-orange-400 rounded-full text-sm font-medium mb-4 backdrop-blur-sm shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+            Setup Complete
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-4" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight" style={{ fontFamily: "'Cabinet Grotesk', sans-serif" }}>
             Choose Your Role
           </h1>
-          <p className="text-lg text-slate-600" style={{ fontFamily: "'Manrope', sans-serif" }}>
-            Select your role to access the appropriate dashboard and features
+          <p className="text-lg text-slate-300 max-w-2xl mx-auto" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            Select your primary role to customize your dashboard experience and access level
           </p>
         </div>
 
         {/* Role Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           {ROLES.map((role) => {
             const Icon = role.icon;
             const isSelected = selectedRole === role.id;
@@ -93,31 +100,47 @@ export const RoleSelection = () => {
             return (
               <Card
                 key={role.id}
-                className={`relative cursor-pointer transition-all duration-300 ${
+                className={`relative group cursor-pointer transition-all duration-500 overflow-hidden ${
                   isSelected
-                    ? 'ring-4 ring-offset-2 shadow-xl scale-105'
-                    : 'hover:shadow-lg hover:scale-102 border-slate-200'
-                } bg-white`}
-                style={isSelected ? { ringColor: role.color.replace('bg-', '') } : {}}
+                    ? 'scale-[1.02] border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.15)] bg-slate-800/80 backdrop-blur-xl'
+                    : 'border-white/5 hover:border-white/20 bg-slate-900/50 backdrop-blur-md hover:bg-slate-800/50'
+                }`}
                 onClick={() => setSelectedRole(role.id)}
                 data-testid={`role-card-${role.id.toLowerCase()}`}
               >
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-4">
-                    <div className={`p-4 rounded-xl ${role.color} text-white flex-shrink-0`}>
-                      <Icon className="h-8 w-8" />
+                {/* Selection highlight gradient */}
+                {isSelected && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-transparent pointer-events-none" />
+                )}
+
+                <CardContent className="p-6 md:p-8 relative z-10">
+                  <div className="flex items-start gap-5">
+                    <div className={`p-4 rounded-2xl ${
+                      isSelected ? role.color : 'bg-slate-800 text-slate-300 group-hover:text-white group-hover:bg-slate-700'
+                    } transition-colors duration-300 shadow-lg flex-shrink-0`}>
+                      <Icon className="h-7 w-7" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-slate-900 mb-2">{role.title}</h3>
-                      <p className="text-slate-600 text-sm">{role.description}</p>
+                      <h3 className={`text-xl font-bold mb-2 transition-colors ${
+                        isSelected ? 'text-white' : 'text-slate-200 group-hover:text-white'
+                      }`}>
+                        {role.title}
+                      </h3>
+                      <p className={`text-sm transition-colors ${
+                        isSelected ? 'text-slate-300' : 'text-slate-400 group-hover:text-slate-300'
+                      }`}>
+                        {role.description}
+                      </p>
                     </div>
-                    {isSelected && (
-                      <div className="absolute top-4 right-4">
-                        <div className={`${role.color} text-white rounded-full p-1`}>
-                          <Check className="h-5 w-5" />
-                        </div>
+                    
+                    {/* Checkmark icon for selected state */}
+                    <div className={`absolute top-6 right-6 transition-all duration-300 ${
+                      isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+                    }`}>
+                      <div className="bg-orange-500 text-white rounded-full p-1.5 shadow-[0_0_15px_rgba(249,115,22,0.5)]">
+                        <Check className="h-4 w-4" strokeWidth={3} />
                       </div>
-                    )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -130,16 +153,36 @@ export const RoleSelection = () => {
           <Button
             onClick={handleRoleSelect}
             disabled={!selectedRole || submitting}
-            className={`px-12 py-6 text-lg font-semibold ${!selectedRole ? 'bg-slate-300' : 'bg-[#f97316] hover:bg-orange-600'} transition-all duration-200`}
+            className={`px-12 py-7 text-lg font-semibold rounded-xl group relative overflow-hidden transition-all duration-300 ${
+              !selectedRole 
+                ? 'bg-slate-800 text-slate-500 border border-slate-700/50' 
+                : 'bg-orange-500 hover:bg-orange-400 text-white shadow-[0_0_30px_rgba(249,115,22,0.3)] hover:shadow-[0_0_40px_rgba(249,115,22,0.5)] hover:-translate-y-1'
+            }`}
             data-testid="confirm-role-btn"
           >
-            {submitting ? 'Setting up your account...' : 'Continue to Dashboard'}
+            {selectedRole && (
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              {submitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Setting up account...
+                </>
+              ) : (
+                'Continue to Dashboard'
+              )}
+            </span>
           </Button>
         </div>
 
         {/* Info Text */}
-        <p className="text-center text-sm text-slate-500 mt-8">
-          You can contact an administrator if you need to change your role later
+        <p className="text-center text-sm text-slate-500 mt-8 flex items-center justify-center gap-2">
+          <Shield className="h-4 w-4" />
+          Role changes require administrator approval after initial selection
         </p>
       </div>
     </div>
