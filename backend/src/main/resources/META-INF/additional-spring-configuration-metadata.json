@@ -89,6 +89,16 @@
       "name": "app.google.redirect-uri",
       "type": "java.lang.String",
       "description": "Google OAuth redirect URI."
+    },
+    {
+      "name": "app.frontend.url",
+      "type": "java.lang.String",
+      "description": "Frontend base URL used for redirects."
+    },
+    {
+      "name": "app.oauth2.redirect-uri",
+      "type": "java.lang.String",
+      "description": "Frontend OAuth callback URL for backend OAuth2 login success handler."
     }
   ]
 }
