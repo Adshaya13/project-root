@@ -16,8 +16,8 @@ public class JwtTokenProvider {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration}")
-    private long jwtExpiration;
+    @Value("${app.jwt.expiration-minutes}")
+    private long jwtExpirationMinutes;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
@@ -25,7 +25,7 @@ public class JwtTokenProvider {
 
     public String generateToken(String email, String role) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + jwtExpiration);
+        Date expiry = new Date(now.getTime() + (jwtExpirationMinutes * 60_000));
 
         return Jwts.builder()
                 .setSubject(email)
@@ -57,9 +57,9 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token);
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             log.error("Invalid JWT token: {}", e.getMessage());

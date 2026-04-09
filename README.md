@@ -3,14 +3,14 @@
 This repository contains a full-stack application with:
 
 - `backend/`: Spring Boot API (Maven)
-- `frontend/`: React + TypeScript app (Vite)
+- `frontend/`: React app (JavaScript + CRACO)
 
 ## Backend
 
 From `backend/`:
 
 ```bash
-./mvnw.cmd spring-boot:run
+./mvnw spring-boot:run -Dspring-boot.run.main-class=com.smartcampus.SmartCampusApplication
 ```
 
 Run tests:
@@ -25,7 +25,7 @@ From `frontend/`:
 
 ```bash
 npm install
-npm run dev
+npm start
 ```
 
 Build frontend:
