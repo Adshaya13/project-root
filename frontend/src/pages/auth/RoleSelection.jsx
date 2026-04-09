@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/authService';
+import { AuthContext } from '@/context/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GraduationCap, Wrench, BarChart3, Shield, Check } from 'lucide-react';
+import { GraduationCap, Wrench, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { getRoleDashboard } from '@/utils/roleHelpers';
 
 const ROLES = [
   {
     id: 'USER',
-    title: 'Student / Staff',
+    title: 'User',
     icon: GraduationCap,
-    description: 'Browse resources, make bookings, report incidents',
+    description: 'Browse resources, make bookings, and report incidents',
     color: 'bg-blue-500',
     hoverColor: 'hover:bg-blue-600',
     borderColor: 'border-blue-200',
@@ -25,29 +27,24 @@ const ROLES = [
     hoverColor: 'hover:bg-green-600',
     borderColor: 'border-green-200',
   },
-  {
-    id: 'MANAGER',
-    title: 'Manager',
-    icon: BarChart3,
-    description: 'Oversee bookings and resources',
-    color: 'bg-orange-500',
-    hoverColor: 'hover:bg-orange-600',
-    borderColor: 'border-orange-200',
-  },
-  {
-    id: 'ADMIN',
-    title: 'Admin',
-    icon: Shield,
-    description: 'Full system control and management',
-    color: 'bg-purple-500',
-    hoverColor: 'hover:bg-purple-600',
-    borderColor: 'border-purple-200',
-  },
 ];
 
 export const RoleSelection = () => {
+  const { user, checkAuth } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!authService.getToken()) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    if (user?.role && !user?.needsRoleSelection) {
+      navigate(getRoleDashboard(user.role), { replace: true });
+    }
+  }, [navigate, user]);
 
   const handleRoleSelect = async () => {
     if (!selectedRole) {
@@ -57,13 +54,14 @@ export const RoleSelection = () => {
 
     setSubmitting(true);
     try {
-      await authService.selectRole(selectedRole);
+      const updatedUser = await authService.selectRole(selectedRole);
+      await checkAuth();
       toast.success(`Welcome! You're now signed in as ${selectedRole}`);
       
       // Redirect to appropriate dashboard
-      window.location.href = getRoleDashboard(selectedRole);
+      window.location.href = getRoleDashboard(updatedUser.role || selectedRole);
     } catch (error) {
-      toast.error('Failed to set role. Please try again.');
+      toast.error(error.message || 'Failed to set role. Please try again.');
       setSubmitting(false);
     }
   };
@@ -184,9 +182,8 @@ export const RoleSelection = () => {
         </div>
 
         {/* Info Text */}
-        <p className="text-center text-sm text-slate-500 mt-8 flex items-center justify-center gap-2">
-          <Shield className="h-4 w-4" />
-          Role changes require administrator approval after initial selection
+        <p className="text-center text-sm text-slate-500 mt-8">
+          Choose your role once to complete onboarding.
         </p>
       </div>
     </div>
