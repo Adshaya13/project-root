@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
@@ -33,26 +35,21 @@ public class BookingService {
 
         validateTimeRange(request);
         validateAttendees(request, resource);
+        validateOneBookingPerDayRule(user, resource, request.getDate());
 
-        Booking.UserRole userRole = mapToBookingUserRole(user.getRole());
+        Booking.UserRole userRole = mapToBookingUserRole(user);
+        validateBookingAccess(user, userRole);
+        validateResourceAccess(userRole, resource);
 
         List<Booking> approvedOverlaps = findOverlappingBookings(
                 request.getResourceId(),
                 request.getDate(),
                 request.getStartTime(),
                 request.getEndTime(),
-                List.of(Booking.BookingStatus.APPROVED));
+                List.of(Booking.BookingStatus.APPROVED, Booking.BookingStatus.PENDING));
 
-        if (userRole == Booking.UserRole.STUDENT) {
-            boolean conflictsWithApprovedStaff = approvedOverlaps.stream()
-                    .anyMatch(existing -> existing.getUserRole() == Booking.UserRole.STAFF);
-            if (conflictsWithApprovedStaff) {
-                throw new BadRequestException("Slot reserved for higher priority user");
-            }
-
-            if (!approvedOverlaps.isEmpty()) {
-                throw new BadRequestException("Resource already booked for selected time");
-            }
+        if (!approvedOverlaps.isEmpty()) {
+            throw new BadRequestException("Resource already booked for selected time");
         }
 
         Booking booking = Booking.builder()
@@ -245,8 +242,16 @@ public class BookingService {
             throw new BadRequestException("start_time must be earlier than end_time");
         }
 
-        if (request.getDate().isBefore(java.time.LocalDate.now())) {
-            throw new BadRequestException("Booking date cannot be in the past");
+        LocalDate today = LocalDate.now();
+        LocalDate minDate = today.plusDays(1);
+        LocalDate maxDate = today.plusDays(14);
+        if (request.getDate().isBefore(minDate) || request.getDate().isAfter(maxDate)) {
+            throw new BadRequestException("Booking date must be between +1 and +14 days from today");
+        }
+
+        Duration duration = Duration.between(request.getStartTime(), request.getEndTime());
+        if (duration.compareTo(Duration.ofHours(3)) > 0) {
+            throw new BadRequestException("Booking duration cannot exceed 3 hours");
         }
     }
 
@@ -256,20 +261,57 @@ public class BookingService {
         }
     }
 
+    private void validateOneBookingPerDayRule(User user, Resource resource, LocalDate date) {
+        String type = resource.getType() == null ? "" : resource.getType().name();
+        boolean isSingleBookingType = "EQUIPMENT".equals(type) || "STUDY_AREA".equals(type);
+
+        if (!isSingleBookingType) {
+            return;
+        }
+
+        List<Booking> existing = bookingRepository.findByUserIdAndDateAndStatusIn(
+                user.getId(),
+                date,
+                List.of(Booking.BookingStatus.PENDING, Booking.BookingStatus.APPROVED));
+
+        if (!existing.isEmpty()) {
+            throw new BadRequestException("Only one booking per day is allowed for this resource type");
+        }
+    }
+
     private void ensurePending(Booking booking) {
         if (booking.getStatus() != Booking.BookingStatus.PENDING) {
             throw new BadRequestException("Only PENDING bookings can be processed");
         }
     }
 
-    private Booking.UserRole mapToBookingUserRole(User.Role role) {
-        if (role == null) {
+    private void validateBookingAccess(User user, Booking.UserRole userRole) {
+        if (user.getRole() == User.Role.USER && userRole == Booking.UserRole.STUDENT && !user.isBookingAccess()) {
+            throw new BadRequestException("Booking access not granted. Contact admin.");
+        }
+    }
+
+    private void validateResourceAccess(Booking.UserRole userRole, Resource resource) {
+        if (userRole != Booking.UserRole.STUDENT) {
+            return;
+        }
+
+        if (resource.getType() != Resource.ResourceType.EQUIPMENT) {
+            throw new BadRequestException("You are not allowed to book this resource");
+        }
+    }
+
+    private Booking.UserRole mapToBookingUserRole(User user) {
+        if (user.getRole() == null) {
             return Booking.UserRole.STUDENT;
         }
 
-        return switch (role) {
-            case USER -> Booking.UserRole.STUDENT;
-            case ADMIN, TECHNICIAN -> Booking.UserRole.STAFF;
+        return switch (user.getRole()) {
+            case USER -> user.getUserRole() == User.BookingUserRole.STAFF
+                    ? Booking.UserRole.STAFF
+                    : Booking.UserRole.STUDENT;
+            case ADMIN -> Booking.UserRole.STAFF;
+            case TECHNICIAN -> Booking.UserRole.STUDENT;
         };
     }
 

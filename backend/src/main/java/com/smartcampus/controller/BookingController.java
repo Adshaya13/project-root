@@ -23,7 +23,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('USER', 'TECHNICIAN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<BookingDTO.Response>> createBooking(
             Authentication authentication,
             @Valid @RequestBody BookingDTO.CreateRequest request) {
@@ -34,7 +34,7 @@ public class BookingController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('USER', 'TECHNICIAN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<BookingDTO.Response>>> getMyBookings(Authentication authentication) {
         List<BookingDTO.Response> bookings = bookingService.getMyBookings(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(bookings));
@@ -68,7 +68,7 @@ public class BookingController {
     }
 
     @PutMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('USER', 'TECHNICIAN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ApiResponse<BookingDTO.Response>> cancelBooking(
             @PathVariable String id,
             Authentication authentication) {

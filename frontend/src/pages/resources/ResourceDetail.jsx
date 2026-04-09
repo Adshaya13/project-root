@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { resourceService } from '@/services/resourceService';
 import { bookingService } from '@/services/bookingService';
@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 export const ResourceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [resource, setResource] = useState(null);
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -28,10 +29,88 @@ export const ResourceDetail = () => {
     attendees: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [attendeesError, setAttendeesError] = useState('');
+  const [timeError, setTimeError] = useState('');
+
+  const isThirtyMinuteSlot = (timeValue) => {
+    if (!timeValue || !timeValue.includes(':')) {
+      return false;
+    }
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    return Number.isInteger(hours) && Number.isInteger(minutes) && (minutes === 0 || minutes === 30);
+  };
+
+  const normalizeToThirtyMinuteSlot = (timeValue) => {
+    if (!timeValue || !timeValue.includes(':')) {
+      return timeValue;
+    }
+
+    const [rawHours, rawMinutes] = timeValue.split(':').map(Number);
+    if (!Number.isInteger(rawHours) || !Number.isInteger(rawMinutes)) {
+      return timeValue;
+    }
+
+    const roundedMinutes = rawMinutes < 15 ? 0 : rawMinutes < 45 ? 30 : 0;
+    const hourOffset = rawMinutes >= 45 ? 1 : 0;
+    const normalizedHours = (rawHours + hourOffset) % 24;
+    return `${normalizedHours.toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}`;
+  };
+
+  const getTimeValidationError = (startTime, endTime) => {
+    if (!startTime || !endTime) {
+      return '';
+    }
+
+    if (!isThirtyMinuteSlot(startTime) || !isThirtyMinuteSlot(endTime)) {
+      return 'Start and end times must use 30-minute intervals';
+    }
+
+    const toMinutes = (timeValue) => {
+      const [hours, minutes] = timeValue.split(':').map(Number);
+      return (hours * 60) + minutes;
+    };
+
+    if (toMinutes(startTime) >= toMinutes(endTime)) {
+      return 'Start time must be earlier than end time';
+    }
+
+    return '';
+  };
+
+  const getApiErrorMessage = (error) => {
+    const responsePayload = error?.response?.data;
+    if (!responsePayload) {
+      return 'Failed to create booking';
+    }
+
+    if (responsePayload.message && responsePayload.message !== 'Validation failed') {
+      return responsePayload.message;
+    }
+
+    const fieldErrors = responsePayload.data;
+    if (fieldErrors && typeof fieldErrors === 'object') {
+      const firstError = Object.values(fieldErrors).find((message) => typeof message === 'string' && message.trim());
+      if (firstError) {
+        return firstError;
+      }
+    }
+
+    return responsePayload.message || 'Failed to create booking';
+  };
 
   useEffect(() => {
     fetchResource();
   }, [id]);
+
+  useEffect(() => {
+    if (location.state?.autoOpenBooking) {
+      setBookingOpen(true);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    setTimeError(getTimeValidationError(bookingData.start_time, bookingData.end_time));
+  }, [bookingData.start_time, bookingData.end_time]);
 
   const fetchResource = async () => {
     try {
@@ -51,21 +130,54 @@ export const ResourceDetail = () => {
       return;
     }
 
+    const attendeesCount = parseInt(bookingData.attendees, 10);
+    if (Number.isNaN(attendeesCount) || attendeesCount < 1) {
+      toast.error('Expected attendees must be a valid number');
+      return;
+    }
+
+    if (attendeesCount > resource.capacity) {
+      const message = `Expected attendees cannot exceed capacity (${resource.capacity})`;
+      setAttendeesError(message);
+      toast.error(message);
+      return;
+    }
+    setAttendeesError('');
+
+    if (!bookingData.start_time || !bookingData.end_time) {
+      const message = 'Please select both start time and end time';
+      setTimeError(message);
+      toast.error(message);
+      return;
+    }
+
+    const timeValidationError = getTimeValidationError(bookingData.start_time, bookingData.end_time);
+    if (timeValidationError) {
+      const message = timeValidationError;
+      setTimeError(message);
+      toast.error(message);
+      return;
+    }
+
+    setTimeError('');
+
     setSubmitting(true);
     try {
       await bookingService.create({
         resource_id: resource.resource_id,
         ...bookingData,
-        attendees: parseInt(bookingData.attendees),
+        attendees: attendeesCount,
       });
       toast.success('Booking request submitted! Awaiting admin approval.');
       setBookingOpen(false);
       setBookingData({ date: '', start_time: '', end_time: '', purpose: '', attendees: '' });
+      setAttendeesError('');
+      setTimeError('');
     } catch (error) {
       if (error.response?.status === 409) {
         toast.error('This resource is already booked for the selected time. Please choose another slot.');
       } else {
-        toast.error('Failed to create booking');
+        toast.error(getApiErrorMessage(error));
       }
     } finally {
       setSubmitting(false);
@@ -90,7 +202,13 @@ export const ResourceDetail = () => {
     );
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  const minBookingDate = new Date(today);
+  minBookingDate.setDate(today.getDate() + 1);
+  const maxBookingDate = new Date(today);
+  maxBookingDate.setDate(today.getDate() + 14);
+  const minDate = minBookingDate.toISOString().split('T')[0];
+  const maxDate = maxBookingDate.toISOString().split('T')[0];
 
   return (
     <Layout pageTitle="Resource Details">
@@ -169,7 +287,7 @@ export const ResourceDetail = () => {
                 <Dialog open={bookingOpen} onOpenChange={setBookingOpen}>
                   <DialogTrigger asChild>
                     <Button
-                      className="w-full bg-[#f97316] hover:bg-orange-600 mt-4"
+                      className="w-full bg-[#1e3a5f] hover:bg-slate-800 mt-4"
                       disabled={resource.status === 'OUT_OF_SERVICE'}
                       data-testid="book-resource-btn"
                     >
@@ -177,77 +295,118 @@ export const ResourceDetail = () => {
                       Book This Resource
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
+                  <DialogContent
+                    overlayClassName="bg-slate-900/75"
+                    className="sm:max-w-md bg-white border border-slate-200 shadow-2xl"
+                  >
                     <DialogHeader>
-                      <DialogTitle>Book {resource.name}</DialogTitle>
+                      <DialogTitle className="text-slate-900">Book {resource.name}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleBooking} className="space-y-4">
                       <div>
-                        <Label htmlFor="date">Date *</Label>
+                        <Label htmlFor="date" className="text-slate-700">Date *</Label>
                         <Input
                           id="date"
                           type="date"
-                          min={today}
+                          min={minDate}
+                          max={maxDate}
                           value={bookingData.date}
                           onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
+                          className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
                           required
                           data-testid="booking-date-input"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="start_time">Start Time *</Label>
+                          <Label htmlFor="start_time" className="text-slate-700">Start Time *</Label>
                           <Input
                             id="start_time"
                             type="time"
+                            step={1800}
                             value={bookingData.start_time}
-                            onChange={(e) => setBookingData({ ...bookingData, start_time: e.target.value })}
+                            onChange={(e) => {
+                              setBookingData({ ...bookingData, start_time: e.target.value });
+                            }}
+                            onBlur={(e) => {
+                              const normalized = normalizeToThirtyMinuteSlot(e.target.value);
+                              if (normalized && normalized !== bookingData.start_time) {
+                                setBookingData((prev) => ({ ...prev, start_time: normalized }));
+                              }
+                            }}
+                            className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
                             required
                             data-testid="booking-start-time-input"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="end_time">End Time *</Label>
+                          <Label htmlFor="end_time" className="text-slate-700">End Time *</Label>
                           <Input
                             id="end_time"
                             type="time"
+                            step={1800}
                             value={bookingData.end_time}
-                            onChange={(e) => setBookingData({ ...bookingData, end_time: e.target.value })}
+                            onChange={(e) => {
+                              setBookingData({ ...bookingData, end_time: e.target.value });
+                            }}
+                            onBlur={(e) => {
+                              const normalized = normalizeToThirtyMinuteSlot(e.target.value);
+                              if (normalized && normalized !== bookingData.end_time) {
+                                setBookingData((prev) => ({ ...prev, end_time: normalized }));
+                              }
+                            }}
+                            className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
                             required
                             data-testid="booking-end-time-input"
                           />
                         </div>
                       </div>
+                      {timeError && <p className="text-xs text-red-600 -mt-2">{timeError}</p>}
+                      <p className="text-xs text-slate-500 -mt-2">Use 30-minute intervals (e.g., 09:00, 09:30, 10:00).</p>
                       <div>
-                        <Label htmlFor="attendees">Expected Attendees *</Label>
+                        <Label htmlFor="attendees" className="text-slate-700">Expected Attendees *</Label>
                         <Input
                           id="attendees"
                           type="number"
                           min="1"
                           max={resource.capacity}
                           value={bookingData.attendees}
-                          onChange={(e) => setBookingData({ ...bookingData, attendees: e.target.value })}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setBookingData({ ...bookingData, attendees: value });
+                            const count = parseInt(value, 10);
+                            if (!value) {
+                              setAttendeesError('');
+                            } else if (!Number.isNaN(count) && count > resource.capacity) {
+                              setAttendeesError(`Expected attendees cannot exceed capacity (${resource.capacity})`);
+                            } else {
+                              setAttendeesError('');
+                            }
+                          }}
+                          className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
                           required
                           data-testid="booking-attendees-input"
                         />
+                        {attendeesError && <p className="text-xs text-red-600 mt-1">{attendeesError}</p>}
                       </div>
                       <div>
-                        <Label htmlFor="purpose">Purpose *</Label>
+                        <Label htmlFor="purpose" className="text-slate-700">Purpose *</Label>
                         <Textarea
                           id="purpose"
                           rows={3}
                           value={bookingData.purpose}
                           onChange={(e) => setBookingData({ ...bookingData, purpose: e.target.value })}
+                          className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
                           required
                           placeholder="Briefly describe the purpose of this booking"
                           data-testid="booking-purpose-input"
                         />
                       </div>
                       <div className="flex gap-2">
-                        <Button type="button" variant="outline" onClick={() => setBookingOpen(false)} className="flex-1">
+                        <Button type="button" variant="outline" onClick={() => setBookingOpen(false)} className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100">
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={submitting} className="flex-1 bg-[#f97316] hover:bg-orange-600" data-testid="submit-booking-btn">
+                        <Button type="submit" disabled={submitting || !!timeError || !!attendeesError} className="flex-1 bg-[#1e3a5f] hover:bg-slate-800" data-testid="submit-booking-btn">
                           {submitting ? 'Submitting...' : 'Submit Request'}
                         </Button>
                       </div>
