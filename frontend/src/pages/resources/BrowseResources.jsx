@@ -165,16 +165,29 @@ export const BrowseResources = () => {
                       Capacity: {resource.capacity}
                     </div>
                   </div>
-                  <Button
-                    className="w-full bg-[#1e3a5f] hover:bg-slate-800"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/resources/${resource.resource_id}`);
-                    }}
-                    data-testid={`view-details-btn-${resource.resource_id}`}
-                  >
-                    View Details
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      className="bg-[#f97316] hover:bg-orange-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/resources/${resource.resource_id}`, { state: { autoOpenBooking: true } });
+                      }}
+                      disabled={resource.status !== 'ACTIVE'}
+                      data-testid={`book-now-btn-${resource.resource_id}`}
+                    >
+                      Book Now
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/resources/${resource.resource_id}`);
+                      }}
+                      data-testid={`view-details-btn-${resource.resource_id}`}
+                    >
+                      View Details
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

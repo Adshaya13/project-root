@@ -24,6 +24,12 @@ export const AllBookings = () => {
 
   useEffect(() => {
     fetchBookings();
+
+    const intervalId = setInterval(() => {
+      fetchBookings();
+    }, 15000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const fetchBookings = async () => {
@@ -167,14 +173,24 @@ export const AllBookings = () => {
         </Tabs>
 
         <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-          <DialogContent>
+          <DialogContent
+            overlayClassName="bg-black/85 backdrop-blur-[2px]"
+            className="border border-white/35 bg-white/85 backdrop-blur-md shadow-2xl"
+          >
             <DialogHeader>
-              <DialogTitle>Reject Booking</DialogTitle>
+              <DialogTitle className="text-slate-900">Reject Booking</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="reason">Rejection Reason *</Label>
-                <Textarea id="reason" rows={4} value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} placeholder="Provide a reason for rejection..." />
+                <Label htmlFor="reason" className="text-slate-700">Rejection Reason *</Label>
+                <Textarea
+                  id="reason"
+                  rows={4}
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Provide a reason for rejection..."
+                  className="bg-white/75 border-slate-300/80 placeholder:text-slate-400"
+                />
               </div>
               <div className="flex gap-2">
                 <Button
