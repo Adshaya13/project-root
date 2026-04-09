@@ -27,9 +27,12 @@ public class User {
     private String name;
     private String avatarUrl;
     private String googleId;
+    private String passwordHash;
 
     @Builder.Default
-    private Role role = Role.USER;
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    private Role role;
 
     @Builder.Default
     private boolean active = true;
@@ -38,6 +41,10 @@ public class User {
     private LocalDateTime createdAt;
 
     public enum Role {
-        USER, ADMIN, TECHNICIAN, MANAGER
+        USER, ADMIN, TECHNICIAN
+    }
+
+    public enum AuthProvider {
+        LOCAL, GOOGLE
     }
 }

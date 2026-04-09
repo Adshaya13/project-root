@@ -1,15 +1,20 @@
 package com.smartcampus.config;
 
 import com.smartcampus.security.OAuth2SuccessHandler;
+import com.smartcampus.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -23,6 +28,7 @@ import java.util.List;
 public class SecurityConfig {
 
         private final OAuth2SuccessHandler oAuth2SuccessHandler;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
         @Value("${app.cors-origins:http://localhost:5173}")
         private String corsOrigins;
@@ -35,38 +41,42 @@ public class SecurityConfig {
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                                 .authorizeHttpRequests(auth -> auth
-                                                // Public endpoints
+                                                // Public auth endpoints
                                                 .requestMatchers("/login/**", "/oauth2/**").permitAll()
-                                                .requestMatchers("/api/auth/**").permitAll()
-                                                // Resources: GET is public, mutating ops need ADMIN
-                                                .requestMatchers(
-                                                                org.springframework.http.HttpMethod.GET,
-                                                                "/api/resources", "/api/resources/**")
-                                                .authenticated()
-                                                .requestMatchers(
-                                                                org.springframework.http.HttpMethod.POST,
-                                                                "/api/resources")
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/login",
+                                                                "/api/auth/register")
+                                                .permitAll()
+
+                                                // Authenticated, including roleless users (used after first-time OAuth)
+                                                .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
+                                                .requestMatchers(HttpMethod.PUT, "/api/auth/role").authenticated()
+
+                                                // Role-restricted APIs
+                                                .requestMatchers(HttpMethod.GET, "/api/resources", "/api/resources/**")
+                                                .hasAnyRole("USER", "TECHNICIAN", "ADMIN")
+                                                .requestMatchers(HttpMethod.POST, "/api/resources").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, "/api/resources/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.PATCH, "/api/resources/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/resources/**")
                                                 .hasRole("ADMIN")
-                                                .requestMatchers(
-                                                                org.springframework.http.HttpMethod.PUT,
-                                                                "/api/resources/**")
-                                                .hasRole("ADMIN")
-                                                .requestMatchers(
-                                                                org.springframework.http.HttpMethod.PATCH,
-                                                                "/api/resources/**")
-                                                .hasRole("ADMIN")
-                                                .requestMatchers(
-                                                                org.springframework.http.HttpMethod.DELETE,
-                                                                "/api/resources/**")
-                                                .hasRole("ADMIN")
+
                                                 // Admin endpoints
                                                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                                                // Everything else needs authentication
-                                                .anyRequest().authenticated())
+
+                                                // Any other API requires a real role
+                                                .requestMatchers("/api/**").hasAnyRole("USER", "TECHNICIAN", "ADMIN")
+
+                                                .anyRequest().permitAll())
                                 .oauth2Login(oauth2 -> oauth2
-                                                .successHandler(oAuth2SuccessHandler));
+                                                .successHandler(oAuth2SuccessHandler))
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
                 return http.build();
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
         }
 
         @Bean

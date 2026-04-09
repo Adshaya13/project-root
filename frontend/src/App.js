@@ -1,46 +1,37 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { NotificationProvider } from './context/NotificationContext';
-import { Toaster } from './components/ui/sonner';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { Login } from './pages/auth/Login';
-import { AuthCallback } from './pages/auth/AuthCallback';
-import { RoleSelection } from './pages/auth/RoleSelection';
-import { UserDashboard } from './pages/dashboard/UserDashboard';
-import { BrowseResources } from './pages/resources/BrowseResources';
-import { ResourceDetail } from './pages/resources/ResourceDetail';
-import { MyBookings } from './pages/bookings/MyBookings';
-import { MyTickets } from './pages/tickets/MyTickets';
-import { Home } from './pages/Home';
-import { CreateTicket } from './pages/tickets/CreateTicket';
-import { TicketDetail } from './pages/tickets/TicketDetail';
-import { NotificationsPage } from './pages/notifications/NotificationsPage';
-import { ProfilePage } from './pages/profile/ProfilePage';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { ResourceManagement } from './pages/admin/ResourceManagement';
-import { AllBookings } from './pages/admin/AllBookings';
-import { AllTickets } from './pages/admin/AllTickets';
-import { UserManagement } from './pages/admin/UserManagement';
-import { Analytics } from './pages/admin/Analytics';
-import { TechnicianDashboard } from './pages/technician/TechnicianDashboard';
-import { AssignedTickets } from './pages/technician/AssignedTickets';
-import { ManagerDashboard } from './pages/manager/ManagerDashboard';
-import { ResourcesOverview } from './pages/manager/ResourcesOverview';
-import { BookingApprovals } from './pages/manager/BookingApprovals';
-import { TicketOverview } from './pages/manager/TicketOverview';
-import './App.css';
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { NotificationProvider } from "./context/NotificationContext";
+import { Toaster } from "./components/ui/sonner";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Login } from "./pages/auth/Login";
+import { AuthCallback } from "./pages/auth/AuthCallback";
+import { RoleSelection } from "./pages/auth/RoleSelection";
+import { UserDashboard } from "./pages/dashboard/UserDashboard";
+import { BrowseResources } from "./pages/resources/BrowseResources";
+import { ResourceDetail } from "./pages/resources/ResourceDetail";
+import { MyBookings } from "./pages/bookings/MyBookings";
+import { MyTickets } from "./pages/tickets/MyTickets";
+import { Home } from "./pages/Home";
+import { CreateTicket } from "./pages/tickets/CreateTicket";
+import { TicketDetail } from "./pages/tickets/TicketDetail";
+import { NotificationsPage } from "./pages/notifications/NotificationsPage";
+import { ProfilePage } from "./pages/profile/ProfilePage";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { ResourceManagement } from "./pages/admin/ResourceManagement";
+import { AllBookings } from "./pages/admin/AllBookings";
+import { AllTickets } from "./pages/admin/AllTickets";
+import { UserManagement } from "./pages/admin/UserManagement";
+import { Analytics } from "./pages/admin/Analytics";
+import { TechnicianDashboard } from "./pages/technician/TechnicianDashboard";
+import { AssignedTickets } from "./pages/technician/AssignedTickets";
+import "./App.css";
 
 function AppRouter() {
-  const location = useLocation();
-
-  if (location.hash?.includes('session_id=')) {
-    return <AuthCallback />;
-  }
-
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/auth/google" element={<AuthCallback />} />
       <Route path="/role-selection" element={<RoleSelection />} />
       <Route path="/" element={<Home />} />
 
@@ -48,7 +39,7 @@ function AppRouter() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['USER']}>
+          <ProtectedRoute allowedRoles={["USER"]}>
             <UserDashboard />
           </ProtectedRoute>
         }
@@ -56,7 +47,7 @@ function AppRouter() {
       <Route
         path="/resources"
         element={
-          <ProtectedRoute allowedRoles={['USER', 'ADMIN', 'MANAGER']}>
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
             <BrowseResources />
           </ProtectedRoute>
         }
@@ -64,7 +55,7 @@ function AppRouter() {
       <Route
         path="/resources/:id"
         element={
-          <ProtectedRoute allowedRoles={['USER', 'ADMIN', 'MANAGER']}>
+          <ProtectedRoute allowedRoles={["USER", "ADMIN"]}>
             <ResourceDetail />
           </ProtectedRoute>
         }
@@ -72,7 +63,7 @@ function AppRouter() {
       <Route
         path="/bookings/my"
         element={
-          <ProtectedRoute allowedRoles={['USER']}>
+          <ProtectedRoute allowedRoles={["USER"]}>
             <MyBookings />
           </ProtectedRoute>
         }
@@ -80,7 +71,7 @@ function AppRouter() {
       <Route
         path="/tickets/my"
         element={
-          <ProtectedRoute allowedRoles={['USER']}>
+          <ProtectedRoute allowedRoles={["USER"]}>
             <MyTickets />
           </ProtectedRoute>
         }
@@ -88,7 +79,7 @@ function AppRouter() {
       <Route
         path="/tickets/new"
         element={
-          <ProtectedRoute allowedRoles={['USER']}>
+          <ProtectedRoute allowedRoles={["USER"]}>
             <CreateTicket />
           </ProtectedRoute>
         }
@@ -106,7 +97,7 @@ function AppRouter() {
       <Route
         path="/admin/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['ADMIN']}>
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminDashboard />
           </ProtectedRoute>
         }
@@ -114,7 +105,7 @@ function AppRouter() {
       <Route
         path="/admin/resources"
         element={
-          <ProtectedRoute allowedRoles={['ADMIN']}>
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
             <ResourceManagement />
           </ProtectedRoute>
         }
@@ -122,7 +113,7 @@ function AppRouter() {
       <Route
         path="/admin/bookings"
         element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AllBookings />
           </ProtectedRoute>
         }
@@ -130,7 +121,7 @@ function AppRouter() {
       <Route
         path="/admin/tickets"
         element={
-          <ProtectedRoute allowedRoles={['ADMIN']}>
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AllTickets />
           </ProtectedRoute>
         }
@@ -138,7 +129,7 @@ function AppRouter() {
       <Route
         path="/admin/users"
         element={
-          <ProtectedRoute allowedRoles={['ADMIN']}>
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
             <UserManagement />
           </ProtectedRoute>
         }
@@ -146,7 +137,7 @@ function AppRouter() {
       <Route
         path="/admin/analytics"
         element={
-          <ProtectedRoute allowedRoles={['ADMIN']}>
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
             <Analytics />
           </ProtectedRoute>
         }
@@ -156,7 +147,7 @@ function AppRouter() {
       <Route
         path="/technician/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['TECHNICIAN']}>
+          <ProtectedRoute allowedRoles={["TECHNICIAN"]}>
             <TechnicianDashboard />
           </ProtectedRoute>
         }
@@ -164,42 +155,8 @@ function AppRouter() {
       <Route
         path="/technician/tickets"
         element={
-          <ProtectedRoute allowedRoles={['TECHNICIAN']}>
+          <ProtectedRoute allowedRoles={["TECHNICIAN"]}>
             <AssignedTickets />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* MANAGER routes */}
-      <Route
-        path="/manager/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={['MANAGER']}>
-            <ManagerDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/resources"
-        element={
-          <ProtectedRoute allowedRoles={['MANAGER']}>
-            <ResourcesOverview />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/bookings"
-        element={
-          <ProtectedRoute allowedRoles={['MANAGER']}>
-            <BookingApprovals />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/manager/tickets"
-        element={
-          <ProtectedRoute allowedRoles={['MANAGER']}>
-            <TicketOverview />
           </ProtectedRoute>
         }
       />
@@ -229,7 +186,9 @@ function AppRouter() {
           <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
             <div className="text-center">
               <h1 className="text-6xl font-bold text-slate-900 mb-4">403</h1>
-              <p className="text-xl text-slate-600 mb-8">You don't have permission to access this page</p>
+              <p className="text-xl text-slate-600 mb-8">
+                You don't have permission to access this page
+              </p>
               <a href="/" className="text-[#f97316] hover:underline">
                 Go back home
               </a>
