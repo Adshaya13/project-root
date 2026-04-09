@@ -50,6 +50,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             user = existingUser.get();
             user.setName(name);
             user.setAvatarUrl(picture);
+            user.setGoogleId(googleId);
+            user.setAuthProvider(User.AuthProvider.GOOGLE);
             isNewUser = false;
         } else {
             user = User.builder()
@@ -57,21 +59,26 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                     .name(name)
                     .avatarUrl(picture)
                     .googleId(googleId)
-                    .role(User.Role.USER) // default role
+                    .authProvider(User.AuthProvider.GOOGLE)
+                    .role(null)
                     .build();
             isNewUser = true;
         }
 
         userRepository.save(user);
 
-        // Generate JWT token
-        String token = jwtTokenProvider.generateToken(email, user.getRole().name());
+        boolean needsRoleSelection = user.getRole() == null;
 
-        // Redirect to frontend with token and isNewUser flag
+        // Generate JWT token
+        String roleClaim = user.getRole() == null ? "" : user.getRole().name();
+        String token = jwtTokenProvider.generateToken(email, roleClaim);
+
+        // Redirect to frontend with token and first-login role-selection flags
         String targetUrl = redirectUri
                 + "?token=" + token
                 + "&isNewUser=" + isNewUser
-                + "&role=" + user.getRole().name();
+                + "&needsRoleSelection=" + needsRoleSelection
+                + "&role=" + roleClaim;
 
         log.info("Redirecting to: {}", targetUrl);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);

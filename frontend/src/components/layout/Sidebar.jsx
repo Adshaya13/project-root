@@ -41,14 +41,6 @@ const ROLE_MENUS = {
     { icon: Bell, label: 'Notifications', path: '/notifications' },
     { icon: User, label: 'My Profile', path: '/profile' },
   ],
-  MANAGER: [
-    { icon: Home, label: 'Manager Dashboard', path: '/manager/dashboard' },
-    { icon: Building2, label: 'Resources Overview', path: '/manager/resources' },
-    { icon: Calendar, label: 'Booking Approvals', path: '/manager/bookings' },
-    { icon: Ticket, label: 'Ticket Overview', path: '/manager/tickets' },
-    { icon: Bell, label: 'Notifications', path: '/notifications' },
-    { icon: User, label: 'My Profile', path: '/profile' },
-  ],
 };
 
 export const Sidebar = ({ mobileOpen, onMobileClose }) => {

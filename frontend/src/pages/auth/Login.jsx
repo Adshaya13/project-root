@@ -1,8 +1,10 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
 import { getRoleDashboard } from '@/utils/roleHelpers';
 import { Button } from '@/components/ui/button';
+import { authService } from '@/services/authService';
+import { toast } from 'sonner';
 import {
   Card,
   CardContent,
@@ -16,16 +18,54 @@ import { BorderBeam } from "@/registry/magicui/border-beam"
 export const Login = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [mode, setMode] = useState('login');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('USER');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate(getRoleDashboard(user.role));
+      if (!user.role || user.needsRoleSelection) {
+        navigate('/role-selection');
+      } else {
+        navigate(getRoleDashboard(user.role));
+      }
     }
   }, [isAuthenticated, user, navigate]);
 
   const handleGoogleLogin = () => {
-    // DUMMY LOGIN FLOW
-    navigate('/role-selection');
+    authService.startGoogleLogin();
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+
+    try {
+      if (mode === 'register') {
+        const payload = await authService.register({ name, email, password, role });
+        toast.success('Registration successful');
+        if (payload.role) {
+          window.location.href = getRoleDashboard(payload.role);
+        } else {
+          window.location.href = '/role-selection';
+        }
+      } else {
+        const payload = await authService.loginWithPassword({ email, password });
+        toast.success('Signed in successfully');
+        if (payload.needsRoleSelection || !payload.role) {
+          window.location.href = '/role-selection';
+        } else {
+          window.location.href = getRoleDashboard(payload.role);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message || 'Authentication failed');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -63,12 +103,79 @@ export const Login = () => {
         <div className="w-full max-w-md lg:w-[450px]">
           <Card className="relative w-full overflow-hidden bg-[#0f172a]/80 backdrop-blur-xl border-white/10 text-white shadow-2xl">
             <CardHeader className="text-center pb-2">
-              <CardTitle className="text-3xl font-bold font-['Cabinet_Grotesk'] text-white">Welcome Back</CardTitle>
-              <CardDescription className="text-slate-400 font-['Manrope']">Sign in to access your dashboard</CardDescription>
+              <CardTitle className="text-3xl font-bold font-['Cabinet_Grotesk'] text-white">
+                {mode === 'register' ? 'Create Account' : 'Welcome Back'}
+              </CardTitle>
+              <CardDescription className="text-slate-400 font-['Manrope']">
+                {mode === 'register'
+                  ? 'Register with email/password or use Google'
+                  : 'Sign in with email/password or Google'}
+              </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="flex flex-col gap-6">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {mode === 'register' && (
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Full name"
+                    className="w-full h-12 rounded-xl bg-slate-900/70 border border-white/10 px-4 text-white placeholder:text-slate-400 outline-none focus:border-orange-400"
+                    required
+                  />
+                )}
+
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email address"
+                  className="w-full h-12 rounded-xl bg-slate-900/70 border border-white/10 px-4 text-white placeholder:text-slate-400 outline-none focus:border-orange-400"
+                  required
+                />
+
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full h-12 rounded-xl bg-slate-900/70 border border-white/10 px-4 text-white placeholder:text-slate-400 outline-none focus:border-orange-400"
+                  required
+                />
+
+                {mode === 'register' && (
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full h-12 rounded-xl bg-slate-900/70 border border-white/10 px-4 text-white outline-none focus:border-orange-400"
+                  >
+                    <option value="USER">User</option>
+                    <option value="TECHNICIAN">Technician</option>
+                  </select>
+                )}
+
                 <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full h-12 bg-[#f97316] hover:bg-orange-500 text-white font-semibold rounded-xl"
+                  data-testid="email-auth-button"
+                >
+                  {submitting
+                    ? 'Please wait...'
+                    : mode === 'register'
+                    ? 'Create account'
+                    : 'Sign in'}
+                </Button>
+
+                <div className="relative py-1">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-white/10" />
+                  </div>
+                  <div className="relative flex justify-center text-xs text-slate-400">or</div>
+                </div>
+
+                <Button
+                  type="button"
                   onClick={handleGoogleLogin}
                   className="w-full h-14 bg-white hover:bg-slate-100 text-slate-900 font-semibold rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 flex items-center justify-center gap-3 text-base"
                   data-testid="google-login-button"
@@ -91,13 +198,23 @@ export const Login = () => {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Sign in with Google
+                  Continue with Google
                 </Button>
+
+                <button
+                  type="button"
+                  onClick={() => setMode((current) => (current === 'register' ? 'login' : 'register'))}
+                  className="text-sm text-slate-300 hover:text-white underline-offset-2 hover:underline"
+                >
+                  {mode === 'register'
+                    ? 'Already have an account? Sign in'
+                    : 'Need an account? Register'}
+                </button>
 
                 <div className="text-center text-xs text-slate-400">
                   By signing in, you agree to our <span className="text-white hover:underline cursor-pointer">Terms</span> and <span className="text-white hover:underline cursor-pointer">Privacy Policy</span>
                 </div>
-              </div>
+              </form>
             </CardContent>
             <CardFooter>
               <div className="w-full mt-2 p-4 bg-slate-900/50 rounded-xl border border-white/5">

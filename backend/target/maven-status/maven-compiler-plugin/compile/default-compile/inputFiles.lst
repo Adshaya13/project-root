@@ -1,3 +1,4 @@
+/Users/arun/Documents/GitHub/project-root/backend/src/main/java/com/smartcampus/security/JwtAuthenticationFilter.java
 /Users/arun/Documents/GitHub/project-root/backend/src/main/java/com/smartcampus/service/ResourceService.java
 /Users/arun/Documents/GitHub/project-root/backend/src/main/java/com/smartcampus/exception/BadRequestException.java
 /Users/arun/Documents/GitHub/project-root/backend/src/main/java/com/smartcampus/security/JwtTokenProvider.java
