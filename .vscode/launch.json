@@ -6,6 +6,13 @@
 			"name": "SmartCampusApplication",
 			"request": "launch",
 			"mainClass": "com.smartcampus.SmartCampusApplication",
+			"projectName": "smart-campus-hub"
+		},
+		{
+			"type": "java",
+			"name": "SmartCampusApplication",
+			"request": "launch",
+			"mainClass": "com.smartcampus.SmartCampusApplication",
 			"projectName": "backend"
 		},
 		{

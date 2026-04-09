@@ -10,11 +10,14 @@ export const AuthProvider = ({ children }) => {
   const [initialized, setInitialized] = useState(false);
 
   const checkAuth = useCallback(async () => {
-    if (window.location.hash?.includes('session_id=')) {
+    const token = authService.getToken();
+    if (!token) {
+      setUser(null);
+      setIsAuthenticated(false);
       setLoading(false);
       return;
     }
-    
+
     try {
       const userData = await authService.getMe();
       setUser(userData);
@@ -29,11 +32,8 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize auth on mount
   useEffect(() => {
-    if (!initialized && !window.location.hash?.includes('session_id=')) {
+    if (!initialized) {
       checkAuth();
-      setInitialized(true);
-    } else if (window.location.hash?.includes('session_id=')) {
-      setLoading(false);
       setInitialized(true);
     }
   }, [initialized, checkAuth]);
@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }) => {
     }
     setUser(null);
     setIsAuthenticated(false);
+    setLoading(false);
     window.location.href = '/login';
   };
 
