@@ -6,8 +6,12 @@ import com.smartcampus.model.Resource;
 import com.smartcampus.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,8 +21,9 @@ import java.util.stream.Collectors;
 public class ResourceService {
 
     private final ResourceRepository resourceRepository;
+    private final MongoTemplate mongoTemplate;
 
-    // ─── GET ALL (with optional filters) ─────────────────────────────────────
+    // ─── GET ALL (with optional filters pushed to MongoDB) ───────────────────
     public List<ResourceDTO.Response> getAllResources(
             String search,
             String type,
@@ -27,24 +32,46 @@ public class ResourceService {
             Integer minCapacity) {
 
         log.debug("Fetching resources with filters: search={}, type={}, " +
-                  "location={}, status={}, minCapacity={}", 
+                  "location={}, status={}, minCapacity={}",
                   search, type, location, status, minCapacity);
 
-        List<Resource> resources = resourceRepository.findAll();
+        // Build a compound Criteria query — only add clauses for non-blank params
+        List<Criteria> clauses = new ArrayList<>();
 
-        // Apply filters programmatically (flexible approach)
+        if (search != null && !search.isBlank()) {
+            // Case-insensitive regex across name and description
+            Criteria searchCriteria = new Criteria().orOperator(
+                Criteria.where("name").regex(search, "i"),
+                Criteria.where("description").regex(search, "i")
+            );
+            clauses.add(searchCriteria);
+        }
+
+        if (type != null && !type.isBlank()) {
+            clauses.add(Criteria.where("type").is(type.toUpperCase()));
+        }
+
+        if (location != null && !location.isBlank()) {
+            clauses.add(Criteria.where("location").regex(location, "i"));
+        }
+
+        if (status != null && !status.isBlank()) {
+            clauses.add(Criteria.where("status").is(status.toUpperCase()));
+        }
+
+        if (minCapacity != null && minCapacity > 0) {
+            clauses.add(Criteria.where("capacity").gte(minCapacity));
+        }
+
+        Query query = new Query();
+        if (!clauses.isEmpty()) {
+            query.addCriteria(new Criteria().andOperator(clauses.toArray(new Criteria[0])));
+        }
+
+        List<Resource> resources = mongoTemplate.find(query, Resource.class);
+        log.debug("Found {} resource(s) matching filters", resources.size());
+
         return resources.stream()
-                .filter(r -> search == null || search.isBlank() ||
-                        r.getName().toLowerCase().contains(search.toLowerCase()) ||
-                        r.getDescription() != null && 
-                        r.getDescription().toLowerCase().contains(search.toLowerCase()))
-                .filter(r -> type == null || type.isBlank() ||
-                        r.getType().name().equalsIgnoreCase(type))
-                .filter(r -> location == null || location.isBlank() ||
-                        r.getLocation().toLowerCase().contains(location.toLowerCase()))
-                .filter(r -> status == null || status.isBlank() ||
-                        r.getStatus().name().equalsIgnoreCase(status))
-                .filter(r -> minCapacity == null || r.getCapacity() >= minCapacity)
                 .map(ResourceDTO.Response::from)
                 .collect(Collectors.toList());
     }
