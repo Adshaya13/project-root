@@ -75,9 +75,6 @@ public class BookingDTO {
         @JsonProperty("user_name")
         private String userName;
 
-        @JsonProperty("user_role")
-        private Booking.UserRole userRole;
-
         private LocalDate date;
 
         @JsonProperty("start_time")
@@ -107,7 +104,6 @@ public class BookingDTO {
                     .resourceName(booking.getResourceName())
                     .userId(booking.getUserId())
                     .userName(booking.getUserName())
-                    .userRole(booking.getUserRole())
                     .date(booking.getDate())
                     .startTime(booking.getStartTime())
                     .endTime(booking.getEndTime())

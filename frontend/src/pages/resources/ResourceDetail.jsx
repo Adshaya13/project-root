@@ -9,10 +9,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusPill } from '@/components/common/StatusPill';
 import { LoadingSpinner } from '@/components/common/Spinner';
 import { Building2, MapPin, Users, Calendar, Clock, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+
+const SLOT_INTERVAL_MINUTES = 30;
+const MAX_BOOKING_DURATION_MINUTES = 180;
+const OPERATING_START_MINUTES = (7 * 60) + 30;
+const OPERATING_END_MINUTES = (20 * 60) + 30;
+const LATEST_START_MINUTES = OPERATING_END_MINUTES - SLOT_INTERVAL_MINUTES;
+const TIME_TOKEN_PATTERN = /(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/ig;
 
 export const ResourceDetail = () => {
   const { id } = useParams();
@@ -32,28 +40,103 @@ export const ResourceDetail = () => {
   const [attendeesError, setAttendeesError] = useState('');
   const [timeError, setTimeError] = useState('');
 
+  const toMinutes = (timeValue) => {
+    if (!timeValue || !timeValue.includes(':')) {
+      return Number.NaN;
+    }
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
+      return Number.NaN;
+    }
+    return (hours * 60) + minutes;
+  };
+
+  const toTimeValue = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+
+  const toTimeLabel = (minutes) => {
+    const hours24 = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const period = hours24 >= 12 ? 'PM' : 'AM';
+    const hours12 = hours24 % 12 || 12;
+    return `${hours12}:${mins.toString().padStart(2, '0')} ${period}`;
+  };
+
+  const parseAvailabilityWindow = (availabilityText) => {
+    const matches = [];
+    const text = String(availabilityText || '');
+    TIME_TOKEN_PATTERN.lastIndex = 0;
+    let match;
+
+    while ((match = TIME_TOKEN_PATTERN.exec(text)) !== null) {
+      const hoursPart = Number(match[1]);
+      const minutesPart = match[2] ? Number(match[2]) : 0;
+      const period = (match[3] || '').toUpperCase();
+
+      if (!Number.isInteger(hoursPart) || !Number.isInteger(minutesPart) || minutesPart < 0 || minutesPart >= 60) {
+        continue;
+      }
+
+      if (!period) {
+        if (hoursPart < 0 || hoursPart >= 24) {
+          continue;
+        }
+        matches.push((hoursPart * 60) + minutesPart);
+        continue;
+      }
+
+      if (hoursPart < 1 || hoursPart > 12) {
+        continue;
+      }
+
+      let normalizedHours = hoursPart % 12;
+      if (period === 'PM') {
+        normalizedHours += 12;
+      }
+      matches.push((normalizedHours * 60) + minutesPart);
+    }
+
+    if (matches.length >= 2 && matches[1] > matches[0]) {
+      return { startMinutes: matches[0], endMinutes: matches[1] };
+    }
+
+    return { startMinutes: OPERATING_START_MINUTES, endMinutes: OPERATING_END_MINUTES };
+  };
+
+  const availabilityWindow = parseAvailabilityWindow(resource?.availability);
+
+  const startTimeOptions = [];
+  const latestAllowedStart = Math.min(
+    availabilityWindow.endMinutes - SLOT_INTERVAL_MINUTES,
+    OPERATING_END_MINUTES - SLOT_INTERVAL_MINUTES
+  );
+  for (let minutes = Math.max(availabilityWindow.startMinutes, OPERATING_START_MINUTES); minutes <= latestAllowedStart; minutes += SLOT_INTERVAL_MINUTES) {
+    startTimeOptions.push({ value: toTimeValue(minutes), label: toTimeLabel(minutes) });
+  }
+
+  const selectedStartMinutes = toMinutes(bookingData.start_time);
+  const endTimeOptions = [];
+  if (Number.isFinite(selectedStartMinutes)) {
+    const minEnd = selectedStartMinutes + SLOT_INTERVAL_MINUTES;
+    const maxEnd = Math.min(
+      selectedStartMinutes + MAX_BOOKING_DURATION_MINUTES,
+      availabilityWindow.endMinutes,
+      OPERATING_END_MINUTES
+    );
+    for (let minutes = minEnd; minutes <= maxEnd; minutes += SLOT_INTERVAL_MINUTES) {
+      endTimeOptions.push({ value: toTimeValue(minutes), label: toTimeLabel(minutes) });
+    }
+  }
+
   const isThirtyMinuteSlot = (timeValue) => {
     if (!timeValue || !timeValue.includes(':')) {
       return false;
     }
     const [hours, minutes] = timeValue.split(':').map(Number);
     return Number.isInteger(hours) && Number.isInteger(minutes) && (minutes === 0 || minutes === 30);
-  };
-
-  const normalizeToThirtyMinuteSlot = (timeValue) => {
-    if (!timeValue || !timeValue.includes(':')) {
-      return timeValue;
-    }
-
-    const [rawHours, rawMinutes] = timeValue.split(':').map(Number);
-    if (!Number.isInteger(rawHours) || !Number.isInteger(rawMinutes)) {
-      return timeValue;
-    }
-
-    const roundedMinutes = rawMinutes < 15 ? 0 : rawMinutes < 45 ? 30 : 0;
-    const hourOffset = rawMinutes >= 45 ? 1 : 0;
-    const normalizedHours = (rawHours + hourOffset) % 24;
-    return `${normalizedHours.toString().padStart(2, '0')}:${roundedMinutes.toString().padStart(2, '0')}`;
   };
 
   const getTimeValidationError = (startTime, endTime) => {
@@ -65,13 +148,19 @@ export const ResourceDetail = () => {
       return 'Start and end times must use 30-minute intervals';
     }
 
-    const toMinutes = (timeValue) => {
-      const [hours, minutes] = timeValue.split(':').map(Number);
-      return (hours * 60) + minutes;
-    };
+    const startMinutes = toMinutes(startTime);
+    const endMinutes = toMinutes(endTime);
 
-    if (toMinutes(startTime) >= toMinutes(endTime)) {
+    if (startMinutes >= endMinutes) {
       return 'Start time must be earlier than end time';
+    }
+
+    if (startMinutes < availabilityWindow.startMinutes || endMinutes > availabilityWindow.endMinutes) {
+      return `Booking must be within the resource availability window (${resource?.availability || 'default hours'})`;
+    }
+
+    if ((endMinutes - startMinutes) > MAX_BOOKING_DURATION_MINUTES) {
+      return 'Booking duration cannot exceed 3 hours';
     }
 
     return '';
@@ -320,49 +409,77 @@ export const ResourceDetail = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="start_time" className="text-slate-700">Start Time *</Label>
-                          <Input
-                            id="start_time"
-                            type="time"
-                            step={1800}
+                          <Select
                             value={bookingData.start_time}
-                            onChange={(e) => {
-                              setBookingData({ ...bookingData, start_time: e.target.value });
+                            onValueChange={(value) => {
+                              setBookingData((prev) => {
+                                const startMinutes = toMinutes(value);
+                                const endMinutes = toMinutes(prev.end_time);
+                                const maxEndMinutes = Math.min(startMinutes + MAX_BOOKING_DURATION_MINUTES, OPERATING_END_MINUTES);
+                                const endInvalid = !Number.isFinite(endMinutes)
+                                  || endMinutes <= startMinutes
+                                  || endMinutes > maxEndMinutes;
+
+                                return {
+                                  ...prev,
+                                  start_time: value,
+                                  end_time: endInvalid ? '' : prev.end_time,
+                                };
+                              });
                             }}
-                            onBlur={(e) => {
-                              const normalized = normalizeToThirtyMinuteSlot(e.target.value);
-                              if (normalized && normalized !== bookingData.start_time) {
-                                setBookingData((prev) => ({ ...prev, start_time: normalized }));
-                              }
-                            }}
-                            className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
-                            required
-                            data-testid="booking-start-time-input"
-                          />
+                          >
+                            <SelectTrigger
+                              id="start_time"
+                              className="bg-white border-slate-300 text-slate-900 focus-visible:ring-slate-400"
+                              data-testid="booking-start-time-input"
+                            >
+                              <SelectValue placeholder="Select start" />
+                            </SelectTrigger>
+                            <SelectContent className="border-slate-200 bg-white text-slate-900 shadow-xl">
+                              {startTimeOptions.map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                  className="focus:bg-slate-100 focus:text-slate-900 data-[state=checked]:bg-slate-100 data-[state=checked]:text-slate-900"
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div>
                           <Label htmlFor="end_time" className="text-slate-700">End Time *</Label>
-                          <Input
-                            id="end_time"
-                            type="time"
-                            step={1800}
+                          <Select
                             value={bookingData.end_time}
-                            onChange={(e) => {
-                              setBookingData({ ...bookingData, end_time: e.target.value });
-                            }}
-                            onBlur={(e) => {
-                              const normalized = normalizeToThirtyMinuteSlot(e.target.value);
-                              if (normalized && normalized !== bookingData.end_time) {
-                                setBookingData((prev) => ({ ...prev, end_time: normalized }));
-                              }
-                            }}
-                            className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
-                            required
-                            data-testid="booking-end-time-input"
-                          />
+                            onValueChange={(value) => setBookingData((prev) => ({ ...prev, end_time: value }))}
+                            disabled={!bookingData.start_time}
+                          >
+                            <SelectTrigger
+                              id="end_time"
+                              className="bg-white border-slate-300 text-slate-900 focus-visible:ring-slate-400"
+                              data-testid="booking-end-time-input"
+                            >
+                              <SelectValue placeholder={bookingData.start_time ? 'Select end' : 'Select start first'} />
+                            </SelectTrigger>
+                            <SelectContent className="border-slate-200 bg-white text-slate-900 shadow-xl">
+                              {endTimeOptions.map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                  className="focus:bg-slate-100 focus:text-slate-900 data-[state=checked]:bg-slate-100 data-[state=checked]:text-slate-900"
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                       {timeError && <p className="text-xs text-red-600 -mt-2">{timeError}</p>}
-                      <p className="text-xs text-slate-500 -mt-2">Use 30-minute intervals (e.g., 09:00, 09:30, 10:00).</p>
+                      <p className="text-xs text-slate-500 -mt-2">
+                        Available in 30-minute slots within {resource?.availability || 'the resource availability window'}. Maximum booking duration is 3 hours.
+                      </p>
                       <div>
                         <Label htmlFor="attendees" className="text-slate-700">Expected Attendees *</Label>
                         <Input

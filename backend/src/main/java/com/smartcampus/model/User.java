@@ -35,12 +35,6 @@ public class User {
     private Role role;
 
     @Builder.Default
-    private BookingUserRole userRole = BookingUserRole.STUDENT;
-
-    @Builder.Default
-    private boolean bookingAccess = false;
-
-    @Builder.Default
     private boolean active = true;
 
     @CreatedDate
@@ -52,9 +46,5 @@ public class User {
 
     public enum AuthProvider {
         LOCAL, GOOGLE
-    }
-
-    public enum BookingUserRole {
-        STUDENT, STAFF
     }
 }

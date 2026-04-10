@@ -28,7 +28,6 @@ public class Booking {
 
     private String userId;
     private String userName;
-    private UserRole userRole;
 
     private LocalDate date;
     private LocalTime startTime;
@@ -59,10 +58,5 @@ public class Booking {
         APPROVED,
         REJECTED,
         CANCELLED
-    }
-
-    public enum UserRole {
-        STAFF,
-        STUDENT
     }
 }

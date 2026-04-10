@@ -13,16 +13,16 @@ import type {
 
 const STORAGE_KEY = `${APP_NAME.toLowerCase().replace(/\s+/g, "-")}-session`;
 
-function normalizeRole(role: unknown): "admin" | "student" | "staff" {
+function normalizeRole(role: unknown): "admin" | "user" | "technician" {
   const normalized = String(role ?? "")
     .trim()
     .toLowerCase()
     .replace(/^role_/, "");
-  if (normalized === "admin" || normalized === "student" || normalized === "staff") {
+  if (normalized === "admin" || normalized === "user" || normalized === "technician") {
     return normalized;
   }
 
-  return "student";
+  return "user";
 }
 
 function normalizeSession(session: AuthSession): AuthSession {
