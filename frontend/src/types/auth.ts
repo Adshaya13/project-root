@@ -1,4 +1,4 @@
-export type Role = "admin" | "student" | "staff";
+export type Role = "admin" | "user" | "technician";
 
 export interface UserProfile {
   id: number;
@@ -35,7 +35,7 @@ export interface SignupRequest {
   email: string;
   phone: string;
   gender: string;
-  role: Exclude<Role, "admin">;
+  role: "user" | "technician";
   password: string;
 }
 
@@ -56,7 +56,7 @@ export interface ResetPasswordRequest {
 
 export interface GoogleAuthRequest {
   accessToken: string;
-  role: Exclude<Role, "admin">;
+  role: "user" | "technician";
 }
 
 export interface DashboardMetric {

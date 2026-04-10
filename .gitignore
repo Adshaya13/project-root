@@ -55,6 +55,63 @@ pnpm-debug.log*
 # ===============================
 # Environment files
 # ===============================
+# ===============================
+# Java / Maven / Gradle
+# ===============================
+/target/
+.mvn/wrapper/maven-wrapper.jar
+
+# ===============================
+# IDEs
+# ===============================
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+### VS Code ###
+.vscode/
+
+# ===============================
+# Node.js / Frontend
+# ===============================
+/node_modules/
+/.pnp
+.pnp.js
+/dist/
+/.build
+.vite/
+
+# ===============================
+# Logs
+# ===============================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+/coverage
+
+# ===============================
+# Environment files
+# ===============================
 .env
 .env.*
 !.env.example

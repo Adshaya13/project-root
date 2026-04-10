@@ -3,10 +3,8 @@ import { Layout } from '@/components/layout/Layout';
 import { bookingService } from '@/services/bookingService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusPill } from '@/components/common/StatusPill';
@@ -25,6 +23,12 @@ export const AllBookings = () => {
 
   useEffect(() => {
     fetchBookings();
+
+    const intervalId = setInterval(() => {
+      fetchBookings();
+    }, 15000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const fetchBookings = async () => {
@@ -50,7 +54,7 @@ export const AllBookings = () => {
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      toast.error('Please provide a rejection reason');
+      toast.error('Rejection reason is required');
       return;
     }
 
@@ -80,12 +84,12 @@ export const AllBookings = () => {
     <Layout pageTitle="All Bookings">
       <div className="space-y-6">
         <Tabs value={filter} onValueChange={setFilter} className="w-full">
-          <TabsList className="bg-white border border-slate-200">
-            <TabsTrigger value="ALL">All ({bookings.length})</TabsTrigger>
-            <TabsTrigger value="PENDING">Pending ({bookings.filter((b) => b.status === 'PENDING').length})</TabsTrigger>
-            <TabsTrigger value="APPROVED">Approved ({bookings.filter((b) => b.status === 'APPROVED').length})</TabsTrigger>
-            <TabsTrigger value="REJECTED">Rejected ({bookings.filter((b) => b.status === 'REJECTED').length})</TabsTrigger>
-            <TabsTrigger value="CANCELLED">Cancelled ({bookings.filter((b) => b.status === 'CANCELLED').length})</TabsTrigger>
+          <TabsList className="bg-white border border-slate-200 shadow-sm p-1 h-auto gap-1 flex-wrap">
+            <TabsTrigger value="ALL" className="px-4 py-2 text-slate-600 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm">All ({bookings.length})</TabsTrigger>
+            <TabsTrigger value="PENDING" className="px-4 py-2 text-slate-600 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm">Pending ({bookings.filter((b) => b.status === 'PENDING').length})</TabsTrigger>
+            <TabsTrigger value="APPROVED" className="px-4 py-2 text-slate-600 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm">Approved ({bookings.filter((b) => b.status === 'APPROVED').length})</TabsTrigger>
+            <TabsTrigger value="REJECTED" className="px-4 py-2 text-slate-600 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm">Rejected ({bookings.filter((b) => b.status === 'REJECTED').length})</TabsTrigger>
+            <TabsTrigger value="CANCELLED" className="px-4 py-2 text-slate-600 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm">Cancelled ({bookings.filter((b) => b.status === 'CANCELLED').length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value={filter} className="mt-6">
@@ -156,14 +160,24 @@ export const AllBookings = () => {
         </Tabs>
 
         <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-          <DialogContent>
+          <DialogContent
+            overlayClassName="bg-slate-900/75 backdrop-blur-[2px]"
+            className="border border-slate-200 bg-white shadow-2xl"
+          >
             <DialogHeader>
-              <DialogTitle>Reject Booking</DialogTitle>
+              <DialogTitle className="text-slate-900">Reject Booking</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="reason">Rejection Reason *</Label>
-                <Textarea id="reason" rows={4} value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} placeholder="Provide a reason for rejection..." />
+                <Label htmlFor="reason" className="text-slate-700">Rejection Reason *</Label>
+                <Textarea
+                  id="reason"
+                  rows={4}
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Provide a reason for rejection..."
+                  className="bg-white border-slate-300 placeholder:text-slate-400 focus-visible:ring-slate-400"
+                />
               </div>
               <div className="flex gap-2">
                 <Button
@@ -172,11 +186,11 @@ export const AllBookings = () => {
                     setRejectDialogOpen(false);
                     setRejectionReason('');
                   }}
-                  className="flex-1"
+                  className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-slate-400"
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleReject} className="flex-1 bg-red-600 hover:bg-red-700">
+                <Button onClick={handleReject} className="flex-1 bg-slate-900 text-white hover:bg-slate-800">
                   Reject Booking
                 </Button>
               </div>
