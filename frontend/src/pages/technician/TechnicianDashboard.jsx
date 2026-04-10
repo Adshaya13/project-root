@@ -31,7 +31,7 @@ export const TechnicianDashboard = () => {
   const fetchData = async () => {
     try {
       const data = await ticketService.getAll();
-      const assigned = data.filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS').length;
+      const assigned = data.filter((t) => t.status === 'ASSIGNED' || t.status === 'OPEN' || t.status === 'IN_PROGRESS').length;
       const inProgress = data.filter((t) => t.status === 'IN_PROGRESS').length;
 
       const oneWeekAgo = new Date();

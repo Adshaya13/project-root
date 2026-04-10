@@ -28,6 +28,8 @@ export const TicketDetail = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedComment, setSelectedComment] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [closingTicket, setClosingTicket] = useState(false);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchTicket();
@@ -102,6 +104,7 @@ export const TicketDetail = () => {
   const getNextStatus = (status) => {
     const transitions = {
       OPEN: 'IN_PROGRESS',
+      ASSIGNED: 'IN_PROGRESS',
       IN_PROGRESS: 'RESOLVED',
       RESOLVED: 'CLOSED',
     };
@@ -129,6 +132,33 @@ export const TicketDetail = () => {
     }
   };
 
+  const handleCloseTicket = async () => {
+    setClosingTicket(true);
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080'}/api/tickets/${id}/close`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result?.message || 'Failed to close ticket');
+      }
+      
+      setTicket(result?.data || result);
+      setCloseDialogOpen(false);
+      toast.success('Ticket closed successfully');
+    } catch (error) {
+      toast.error(error.message || 'Failed to close ticket');
+    } finally {
+      setClosingTicket(false);
+    }
+  };
+
   const getInitials = (name) => {
     return name
       ?.split(' ')
@@ -138,12 +168,20 @@ export const TicketDetail = () => {
       .slice(0, 2);
   };
 
-  const statusTimeline = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
-  const currentIndex = statusTimeline.indexOf(ticket?.status);
   const currentUserId = user?.user_id || user?.id;
-  const isAdmin = user?.role === 'ADMIN';
-  const canTransitionStatus = user?.role === 'TECHNICIAN' || user?.role === 'ADMIN';
-  const nextStatus = getNextStatus(ticket?.status);
+  const currentUserEmail = user?.email || user?.user_email || '';
+  const normalizedRole = String(user?.role || '').toUpperCase();
+  const isAdmin = normalizedRole === 'ADMIN';
+  const isTechnician = normalizedRole === 'TECHNICIAN';
+  
+  const statusTimeline = isTechnician ? ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED'] : ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
+  const currentIndex = statusTimeline.indexOf(ticket?.status);
+  const canTechnicianUpdate = isTechnician
+    && (ticket?.assigned_to === currentUserId
+      || String(ticket?.requester_email || '').toLowerCase() === String(currentUserEmail).toLowerCase());
+  const canTransitionStatus = isTechnician && canTechnicianUpdate;
+  const computedNextStatus = getNextStatus(ticket?.status);
+  const nextStatus = isTechnician && computedNextStatus === 'CLOSED' ? null : computedNextStatus;
 
   const getCommentOwnerId = (comment) => comment.created_by || comment.createdBy || comment.user_id || comment.userId;
   const canEditComment = (comment) => getCommentOwnerId(comment) && getCommentOwnerId(comment) === currentUserId;
@@ -332,7 +370,7 @@ export const TicketDetail = () => {
                 <CardTitle className="text-lg">Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {canTransitionStatus && nextStatus && (
+                {isTechnician && canTransitionStatus && nextStatus && (
                   <div>
                     <p className="text-sm text-slate-500 mb-2">Status Action</p>
                     <Button
@@ -341,6 +379,18 @@ export const TicketDetail = () => {
                       className="w-full bg-[#f97316] hover:bg-orange-600"
                     >
                       {updatingStatus ? 'Updating...' : `Move to ${formatStatusLabel(nextStatus)}`}
+                    </Button>
+                  </div>
+                )}
+                {isAdmin && ticket?.status === 'RESOLVED' && (
+                  <div>
+                    <p className="text-sm text-slate-500 mb-2">Admin Action</p>
+                    <Button
+                      onClick={() => setCloseDialogOpen(true)}
+                      disabled={closingTicket}
+                      className="w-full bg-red-600 hover:bg-red-700"
+                    >
+                      {closingTicket ? 'Closing...' : 'Confirm & Close Ticket'}
                     </Button>
                   </div>
                 )}
@@ -379,16 +429,23 @@ export const TicketDetail = () => {
                     <p className="text-sm text-slate-900">{ticket.contact_details}</p>
                   </div>
                 </div>
-                {ticket.assigned_to_name && (
-                  <div>
-                    <p className="text-sm text-slate-500 mb-1">Assigned To</p>
-                    <p className="text-sm font-medium text-slate-900">{ticket.assigned_to_name}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">Assigned To</p>
+                  <p className="text-sm font-medium text-slate-900">{ticket.assigned_to_name || 'Not Assigned'}</p>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
+
+        <ConfirmDialog
+          open={closeDialogOpen}
+          onOpenChange={setCloseDialogOpen}
+          title="Close Ticket"
+          description="Are you sure you want to close this ticket? This action cannot be undone."
+          onConfirm={handleCloseTicket}
+          confirmText="Close Ticket"
+        />
 
         <ConfirmDialog
           open={deleteDialogOpen}

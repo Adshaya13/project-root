@@ -230,7 +230,9 @@ export const ResourceDetail = () => {
 
     const attendeesCount = parseInt(bookingData.attendees, 10);
     if (Number.isNaN(attendeesCount) || attendeesCount < 1) {
-      toast.error('Expected attendees must be a valid number');
+      const message = 'Expected attendees must be at least 1';
+      setAttendeesError(message);
+      toast.error(message);
       return;
     }
 
@@ -503,6 +505,8 @@ export const ResourceDetail = () => {
                             const count = parseInt(value, 10);
                             if (!value) {
                               setAttendeesError('');
+                            } else if (!Number.isNaN(count) && count < 1) {
+                              setAttendeesError('Expected attendees must be at least 1');
                             } else if (!Number.isNaN(count) && count > resource.capacity) {
                               setAttendeesError(`Expected attendees cannot exceed capacity (${resource.capacity})`);
                             } else {
