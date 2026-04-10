@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface TicketRepository extends MongoRepository<Ticket, String> {
     List<Ticket> findByRequesterEmailOrderByCreatedAtDesc(String requesterEmail);
+    List<Ticket> findByAssignedTechnicianIdOrderByCreatedAtDesc(String assignedTechnicianId);
 }

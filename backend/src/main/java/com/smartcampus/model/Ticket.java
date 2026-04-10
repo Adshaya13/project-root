@@ -37,6 +37,9 @@ public class Ticket {
     private String requesterName;
     private String requesterEmail;
 
+    private String assignedTechnicianId;
+    private String assignedTechnicianName;
+
     @Builder.Default
     private List<String> images = new ArrayList<>();
 
