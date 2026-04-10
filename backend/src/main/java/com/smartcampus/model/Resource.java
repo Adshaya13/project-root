@@ -45,6 +45,9 @@ public class Resource {
     private String description;
     private String imageUrl;
 
+    @Builder.Default
+    private boolean isDeleted = false;
+
     @CreatedDate
     private LocalDateTime createdAt;
 
