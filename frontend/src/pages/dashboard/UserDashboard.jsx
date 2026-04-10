@@ -33,25 +33,42 @@ export const UserDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [bookings, tickets, notifCount, resources] = await Promise.all([
+      const [bookingsResult, ticketsResult, notifResult, resourcesResult] = await Promise.allSettled([
         bookingService.getMyBookings(),
         ticketService.getMy(),
         notificationService.getUnreadCount(),
         resourceService.getAll({ status: 'ACTIVE' }),
       ]);
 
+      const bookings = bookingsResult.status === 'fulfilled' && Array.isArray(bookingsResult.value)
+        ? bookingsResult.value
+        : [];
+      const tickets = ticketsResult.status === 'fulfilled' && Array.isArray(ticketsResult.value)
+        ? ticketsResult.value
+        : [];
+      const notifCount = notifResult.status === 'fulfilled'
+        ? (notifResult.value?.count ?? notifResult.value?.data?.count ?? 0)
+        : 0;
+      const resources = resourcesResult.status === 'fulfilled' && Array.isArray(resourcesResult.value)
+        ? resourcesResult.value
+        : [];
+
       const activeBookings = bookings.filter((b) => b.status === 'APPROVED').length;
-      const openTickets = tickets.filter((t) => t.status === 'OPEN' || t.status === 'IN_PROGRESS').length;
+      const openTickets = tickets.filter((t) => ['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(String(t.status || '').toUpperCase())).length;
 
       setStats({
         activeBookings,
         openTickets,
-        unreadNotifications: notifCount.count,
+        unreadNotifications: notifCount,
         availableResources: resources.length,
       });
 
       setRecentBookings(bookings.slice(0, 5));
       setRecentTickets(tickets.slice(0, 5));
+
+      if (notifResult.status === 'rejected') {
+        console.warn('Unread notification count unavailable:', notifResult.reason);
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
