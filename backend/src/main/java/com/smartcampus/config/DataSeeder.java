@@ -1,6 +1,7 @@
 package com.smartcampus.config;
 
 import com.smartcampus.model.Resource;
+import com.smartcampus.repository.BookingRepository;
 import com.smartcampus.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,8 +22,12 @@ public class DataSeeder implements CommandLineRunner {
 
     private final ResourceRepository resourceRepository;
 
+    private final BookingRepository bookingRepository;
+
     @Override
     public void run(String... args) {
+        syncResourceStatuses();
+        
         if (resourceRepository.count() > 0) {
             log.info("[DataSeeder] Resources collection already has {} document(s) — skipping seed.",
                     resourceRepository.count());
@@ -196,5 +201,33 @@ public class DataSeeder implements CommandLineRunner {
 
         resourceRepository.saveAll(sampleResources);
         log.info("[DataSeeder] ✅ Successfully seeded {} resources into MongoDB.", sampleResources.size());
+    }
+
+    private void syncResourceStatuses() {
+        log.info("[DataSeeder] Synchronizing resource statuses with active bookings...");
+        List<Resource> allResources = resourceRepository.findAll();
+        int updatedCount = 0;
+        
+        for (Resource resource : allResources) {
+            boolean hasApproved = bookingRepository.existsByResourceIdAndStatusAndDateGreaterThanEqual(
+                resource.getId(), 
+                com.smartcampus.model.Booking.BookingStatus.APPROVED, 
+                java.time.LocalDate.now()
+            );
+            
+            if (hasApproved && resource.getStatus() != Resource.ResourceStatus.OUT_OF_SERVICE) {
+                resource.setStatus(Resource.ResourceStatus.OUT_OF_SERVICE);
+                resourceRepository.save(resource);
+                updatedCount++;
+            } else if (!hasApproved && resource.getStatus() != Resource.ResourceStatus.ACTIVE) {
+                resource.setStatus(Resource.ResourceStatus.ACTIVE);
+                resourceRepository.save(resource);
+                updatedCount++;
+            }
+        }
+        
+        if (updatedCount > 0) {
+            log.info("[DataSeeder] ✅ Synchronized {} resource statuses based on booking data.", updatedCount);
+        }
     }
 }
