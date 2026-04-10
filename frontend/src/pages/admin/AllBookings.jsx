@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusPill } from '@/components/common/StatusPill';
@@ -104,7 +103,6 @@ export const AllBookings = () => {
                     <thead>
                       <tr className="border-b border-slate-200">
                         <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">User</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Role</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Resource</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Date</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Time</th>
@@ -118,17 +116,6 @@ export const AllBookings = () => {
                       {filteredBookings.map((booking) => (
                         <tr key={booking.booking_id} className="border-b border-slate-100 hover:bg-slate-50">
                           <td className="py-3 px-4 text-sm text-slate-900">{booking.user_name}</td>
-                          <td className="py-3 px-4 text-sm">
-                            <Badge
-                              className={
-                                booking.user_role === 'STAFF'
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
-                              }
-                            >
-                              {booking.user_role}
-                            </Badge>
-                          </td>
                           <td className="py-3 px-4 text-sm text-slate-900">{booking.resource_name}</td>
                           <td className="py-3 px-4 text-sm text-slate-600">{formatDate(booking.date)}</td>
                           <td className="py-3 px-4 text-sm text-slate-600">

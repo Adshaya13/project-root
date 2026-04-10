@@ -50,8 +50,6 @@ public class AuthController {
                                 .passwordHash(passwordEncoder.encode(request.password()))
                                 .authProvider(User.AuthProvider.LOCAL)
                                 .role(selectedRole)
-                                .userRole(selectedRole == User.Role.USER ? User.BookingUserRole.STUDENT : User.BookingUserRole.STAFF)
-                                .bookingAccess(selectedRole != User.Role.USER)
                                 .active(true)
                                 .build();
 
@@ -148,14 +146,6 @@ public class AuthController {
                 }
 
                 user.setRole(newRole);
-                if (newRole == User.Role.USER) {
-                        if (user.getUserRole() == null) {
-                                user.setUserRole(User.BookingUserRole.STUDENT);
-                        }
-                } else {
-                        user.setUserRole(User.BookingUserRole.STAFF);
-                        user.setBookingAccess(true);
-                }
                 userRepository.save(user);
                 log.info("Role updated for user {} to {}", email, newRole);
 
@@ -195,10 +185,6 @@ public class AuthController {
                                 "email", user.getEmail() == null ? "" : user.getEmail(),
                                 "avatarUrl", user.getAvatarUrl() == null ? "" : user.getAvatarUrl(),
                                 "role", user.getRole() == null ? "" : user.getRole().name(),
-                                "user_role", user.getRole() == User.Role.USER && user.getUserRole() != null
-                                                ? user.getUserRole().name()
-                                                : "",
-                                "booking_access", user.getRole() == User.Role.USER ? user.isBookingAccess() : true,
                                 "token", token == null ? "" : token,
                                 "needsRoleSelection", needsRoleSelection);
         }
