@@ -169,7 +169,7 @@ export const TechnicianDashboard = () => {
                         <td className="py-3 px-4">
                           <StatusPill status={ticket.status} />
                         </td>
-                        <td className="py-3 px-4 text-sm text-slate-600">{ticket.user_name}</td>
+                        <td className="py-3 px-4 text-sm text-slate-600">{ticket.requester_name || 'Unknown'}</td>
                         <td className="py-3 px-4 text-sm text-slate-600">{formatDate(ticket.created_at)}</td>
                         <td className="py-3 px-4">
                           <Button variant="ghost" size="sm" onClick={() => navigate(`/tickets/${ticket.ticket_id}`)}>

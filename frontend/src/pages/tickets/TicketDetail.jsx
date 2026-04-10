@@ -27,6 +27,7 @@ export const TicketDetail = () => {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedComment, setSelectedComment] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     fetchTicket();
@@ -72,6 +73,62 @@ export const TicketDetail = () => {
     }
   };
 
+  const handleStartEditComment = (comment) => {
+    setEditModeCommentId(comment.comment_id);
+    setEditCommentText(comment.text || '');
+  };
+
+  const handleCancelEditComment = () => {
+    setEditModeCommentId(null);
+    setEditCommentText('');
+  };
+
+  const handleUpdateComment = async (commentId) => {
+    if (!editCommentText.trim()) return;
+
+    setSubmittingEdit(true);
+    try {
+      await ticketService.updateComment(id, commentId, editCommentText);
+      handleCancelEditComment();
+      fetchTicket();
+      toast.success('Comment updated');
+    } catch (error) {
+      toast.error('Failed to update comment');
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  const getNextStatus = (status) => {
+    const transitions = {
+      OPEN: 'IN_PROGRESS',
+      IN_PROGRESS: 'RESOLVED',
+      RESOLVED: 'CLOSED',
+    };
+    return transitions[status] || null;
+  };
+
+  const formatStatusLabel = (status) => status?.replace('_', ' ');
+
+  const handleStatusUpdate = async () => {
+    const nextStatus = getNextStatus(ticket?.status);
+    if (!nextStatus) {
+      return;
+    }
+
+    setUpdatingStatus(true);
+    try {
+      const updated = await ticketService.updateStatus(id, nextStatus);
+      setTicket(updated);
+      toast.success(`Ticket moved to ${formatStatusLabel(nextStatus)}`);
+    } catch (error) {
+      const message = error?.response?.data?.message || error?.response?.data?.error || 'Failed to update ticket status';
+      toast.error(message);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const getInitials = (name) => {
     return name
       ?.split(' ')
@@ -83,6 +140,14 @@ export const TicketDetail = () => {
 
   const statusTimeline = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
   const currentIndex = statusTimeline.indexOf(ticket?.status);
+  const currentUserId = user?.user_id || user?.id;
+  const isAdmin = user?.role === 'ADMIN';
+  const canTransitionStatus = user?.role === 'TECHNICIAN' || user?.role === 'ADMIN';
+  const nextStatus = getNextStatus(ticket?.status);
+
+  const getCommentOwnerId = (comment) => comment.created_by || comment.createdBy || comment.user_id || comment.userId;
+  const canEditComment = (comment) => getCommentOwnerId(comment) && getCommentOwnerId(comment) === currentUserId;
+  const canDeleteComment = (comment) => canEditComment(comment) || isAdmin;
 
   if (loading) {
     return (
@@ -267,6 +332,18 @@ export const TicketDetail = () => {
                 <CardTitle className="text-lg">Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {canTransitionStatus && nextStatus && (
+                  <div>
+                    <p className="text-sm text-slate-500 mb-2">Status Action</p>
+                    <Button
+                      onClick={handleStatusUpdate}
+                      disabled={updatingStatus}
+                      className="w-full bg-[#f97316] hover:bg-orange-600"
+                    >
+                      {updatingStatus ? 'Updating...' : `Move to ${formatStatusLabel(nextStatus)}`}
+                    </Button>
+                  </div>
+                )}
                 <div>
                   <p className="text-sm text-slate-500 mb-1">Priority</p>
                   <PriorityBadge priority={ticket.priority} />
@@ -292,7 +369,7 @@ export const TicketDetail = () => {
                   <p className="text-sm text-slate-500 mb-1">Reported By</p>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-slate-400" />
-                    <p className="text-sm text-slate-900">{ticket.user_name || 'Unknown'}</p>
+                    <p className="text-sm text-slate-900">{ticket.requester_name || 'Unknown'}</p>
                   </div>
                 </div>
                 <div>
