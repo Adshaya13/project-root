@@ -59,8 +59,9 @@ public class TicketController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listTickets() {
-        List<Map<String, Object>> tickets = ticketService.listAllTickets();
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listTickets(Authentication authentication) {
+        String principal = authentication != null ? authentication.getName() : "anonymous";
+        List<Map<String, Object>> tickets = ticketService.listTickets(principal);
         return ResponseEntity.ok(ApiResponse.success(tickets, "Retrieved " + tickets.size() + " tickets"));
     }
 
@@ -86,5 +87,19 @@ public class TicketController {
         String status = request.get("status") == null ? null : String.valueOf(request.get("status"));
         Map<String, Object> updated = ticketService.updateStatus(id, status, principal);
         return ResponseEntity.ok(ApiResponse.success(updated, "Ticket status updated successfully"));
+    }
+
+    @PutMapping(value = "/{id}/assign", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> assignTicket(
+            @PathVariable String id,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+
+        String principal = authentication != null ? authentication.getName() : "anonymous";
+        String technicianId = request.get("technician_id") == null
+                ? null
+                : String.valueOf(request.get("technician_id"));
+        Map<String, Object> updated = ticketService.assignTicket(id, technicianId, principal);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Ticket assigned successfully"));
     }
 }

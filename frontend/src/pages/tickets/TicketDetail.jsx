@@ -141,8 +141,13 @@ export const TicketDetail = () => {
   const statusTimeline = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
   const currentIndex = statusTimeline.indexOf(ticket?.status);
   const currentUserId = user?.user_id || user?.id;
+  const currentUserEmail = user?.email || user?.user_email || '';
   const isAdmin = user?.role === 'ADMIN';
-  const canTransitionStatus = user?.role === 'TECHNICIAN' || user?.role === 'ADMIN';
+  const isTechnician = user?.role === 'TECHNICIAN';
+  const canTechnicianUpdate = isTechnician
+    && (ticket?.assigned_to === currentUserId
+      || String(ticket?.requester_email || '').toLowerCase() === String(currentUserEmail).toLowerCase());
+  const canTransitionStatus = isAdmin || canTechnicianUpdate;
   const nextStatus = getNextStatus(ticket?.status);
 
   const getCommentOwnerId = (comment) => comment.created_by || comment.createdBy || comment.user_id || comment.userId;
@@ -379,12 +384,10 @@ export const TicketDetail = () => {
                     <p className="text-sm text-slate-900">{ticket.contact_details}</p>
                   </div>
                 </div>
-                {ticket.assigned_to_name && (
-                  <div>
-                    <p className="text-sm text-slate-500 mb-1">Assigned To</p>
-                    <p className="text-sm font-medium text-slate-900">{ticket.assigned_to_name}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">Assigned To</p>
+                  <p className="text-sm font-medium text-slate-900">{ticket.assigned_to_name || 'Not Assigned'}</p>
+                </div>
               </CardContent>
             </Card>
           </div>
