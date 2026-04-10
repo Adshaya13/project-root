@@ -87,6 +87,7 @@ export const MyTickets = () => {
                           <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Category</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Priority</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Status</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Assigned To</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Created</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-slate-600">Actions</th>
                         </tr>
@@ -106,6 +107,7 @@ export const MyTickets = () => {
                             <td className="py-3 px-4">
                               <StatusPill status={ticket.status} />
                             </td>
+                            <td className="py-3 px-4 text-sm text-slate-600">{ticket.assigned_to_name || 'Not Assigned'}</td>
                             <td className="py-3 px-4 text-sm text-slate-600">{formatDate(ticket.created_at)}</td>
                             <td className="py-3 px-4">
                               <Button
