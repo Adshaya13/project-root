@@ -8,7 +8,7 @@ export const Layout = ({ children, pageTitle }) => {
   return (
     <div className="min-h-screen bg-[#f8fafc]">
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
-      <div className="lg:pl-64">
+      <div className="md:pl-16">
         <Navbar onMenuClick={() => setMobileOpen(true)} pageTitle={pageTitle} />
         <main className="p-6 lg:p-8">{children}</main>
       </div>

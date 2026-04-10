@@ -37,6 +37,9 @@ public class ResourceService {
 
         // Build a compound Criteria query — only add clauses for non-blank params
         List<Criteria> clauses = new ArrayList<>();
+        
+        // Ignore soft-deleted resources
+        clauses.add(Criteria.where("isDeleted").ne(true));
 
         if (search != null && !search.isBlank()) {
             // Case-insensitive regex across name and description
@@ -144,16 +147,23 @@ public class ResourceService {
 
     // ─── DELETE ───────────────────────────────────────────────────────────────
     public void deleteResource(String id) {
-        log.info("Deleting resource id: {}", id);
+        log.info("Soft-deleting resource id: {}", id);
         Resource resource = findResourceOrThrow(id);
-        resourceRepository.delete(resource);
-        log.info("Resource deleted: {}", id);
+        resource.setDeleted(true);
+        resourceRepository.save(resource);
+        log.info("Resource soft-deleted: {}", id);
     }
 
     // ─── HELPER ───────────────────────────────────────────────────────────────
     private Resource findResourceOrThrow(String id) {
-        return resourceRepository.findById(id)
+        Resource resource = resourceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Resource not found with id: " + id));
+        
+        if (resource.isDeleted()) {
+            throw new ResourceNotFoundException("Resource not found with id: " + id);
+        }
+        
+        return resource;
     }
 }
