@@ -31,4 +31,9 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
             String userId,
             LocalDate date,
             List<Booking.BookingStatus> statuses);
+
+        boolean existsByResourceIdAndStatusAndDateGreaterThanEqual(
+            String resourceId,
+            Booking.BookingStatus status,
+            LocalDate date);
 }
