@@ -102,4 +102,14 @@ public class TicketController {
         Map<String, Object> updated = ticketService.assignTicket(id, technicianId, principal);
         return ResponseEntity.ok(ApiResponse.success(updated, "Ticket assigned successfully"));
     }
+
+    @PutMapping(value = "/{id}/close", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> closeTicket(
+            @PathVariable String id,
+            Authentication authentication) {
+
+        String principal = authentication != null ? authentication.getName() : "anonymous";
+        Map<String, Object> updated = ticketService.closeTicket(id, principal);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Ticket closed successfully"));
+    }
 }
