@@ -132,6 +132,12 @@ public class BookingService {
             latestTarget.setRejectedBy(null);
             latestTarget.setRejectedAt(null);
             Booking updated = bookingRepository.save(latestTarget);
+
+            // Set resource out of service upon booking approval
+            Resource resource = findResourceById(updated.getResourceId());
+            resource.setStatus(Resource.ResourceStatus.OUT_OF_SERVICE);
+            resourceRepository.save(resource);
+
             return BookingDTO.Response.from(updated);
         });
     }
@@ -151,6 +157,12 @@ public class BookingService {
         booking.setApprovedBy(null);
         booking.setApprovedAt(null);
         Booking updated = bookingRepository.save(booking);
+
+        // Reset resource to active upon rejection
+        Resource resource = findResourceById(updated.getResourceId());
+        resource.setStatus(Resource.ResourceStatus.ACTIVE);
+        resourceRepository.save(resource);
+
         return BookingDTO.Response.from(updated);
     }
 
@@ -171,6 +183,12 @@ public class BookingService {
         booking.setApprovedBy(null);
         booking.setApprovedAt(null);
         Booking updated = bookingRepository.save(booking);
+
+        // Reset resource to active upon cancellation
+        Resource resource = findResourceById(updated.getResourceId());
+        resource.setStatus(Resource.ResourceStatus.ACTIVE);
+        resourceRepository.save(resource);
+
         return BookingDTO.Response.from(updated);
     }
 

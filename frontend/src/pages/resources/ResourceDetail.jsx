@@ -191,11 +191,20 @@ export const ResourceDetail = () => {
     fetchResource();
   }, [id]);
 
+  // Re-fetch whenever the user returns to this tab so status stays current
   useEffect(() => {
-    if (location.state?.autoOpenBooking) {
-      setBookingOpen(true);
-    }
-  }, [location.state]);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchResource();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+    };
+  }, [id]);
 
   useEffect(() => {
     setTimeError(getTimeValidationError(bookingData.start_time, bookingData.end_time));
@@ -385,15 +394,15 @@ export const ResourceDetail = () => {
                     </Button>
                   </DialogTrigger>
                   <DialogContent
-                    overlayClassName="bg-slate-900/75"
-                    className="sm:max-w-md bg-white border border-slate-200 shadow-2xl"
+                    overlayClassName="bg-black/60 backdrop-blur-sm z-[50]"
+                    className="sm:max-w-md bg-[#0f1629]/80 backdrop-blur-xl border border-orange-500/30 shadow-[0_0_40px_rgba(249,115,22,0.15)] text-white z-[50]"
                   >
                     <DialogHeader>
-                      <DialogTitle className="text-slate-900">Book {resource.name}</DialogTitle>
+                      <DialogTitle className="text-white font-bold text-xl drop-shadow-md">Book {resource.name}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleBooking} className="space-y-4">
                       <div>
-                        <Label htmlFor="date" className="text-slate-700">Date *</Label>
+                        <Label htmlFor="date" className="text-slate-200">Date *</Label>
                         <Input
                           id="date"
                           type="date"
@@ -401,14 +410,14 @@ export const ResourceDetail = () => {
                           max={maxDate}
                           value={bookingData.date}
                           onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
-                          className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
+                          className="bg-[#1a1a2e]/60 border-orange-500/30 text-white placeholder:text-slate-400 focus-visible:ring-orange-500/50 backdrop-blur-md"
                           required
                           data-testid="booking-date-input"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="start_time" className="text-slate-700">Start Time *</Label>
+                          <Label htmlFor="start_time" className="text-slate-200">Start Time *</Label>
                           <Select
                             value={bookingData.start_time}
                             onValueChange={(value) => {
@@ -430,17 +439,17 @@ export const ResourceDetail = () => {
                           >
                             <SelectTrigger
                               id="start_time"
-                              className="bg-white border-slate-300 text-slate-900 focus-visible:ring-slate-400"
+                              className="bg-[#1a1a2e]/60 border-orange-500/30 text-white focus-visible:ring-orange-500/50 backdrop-blur-md"
                               data-testid="booking-start-time-input"
                             >
                               <SelectValue placeholder="Select start" />
                             </SelectTrigger>
-                            <SelectContent className="border-slate-200 bg-white text-slate-900 shadow-xl">
+                            <SelectContent className="border-orange-500/30 bg-[#0f1629]/95 text-white shadow-xl backdrop-blur-xl z-[99999]">
                               {startTimeOptions.map((option) => (
                                 <SelectItem
                                   key={option.value}
                                   value={option.value}
-                                  className="focus:bg-slate-100 focus:text-slate-900 data-[state=checked]:bg-slate-100 data-[state=checked]:text-slate-900"
+                                  className="focus:bg-orange-500/20 focus:text-white data-[state=checked]:bg-orange-500/20 data-[state=checked]:text-white cursor-pointer transition-colors"
                                 >
                                   {option.label}
                                 </SelectItem>
@@ -449,7 +458,7 @@ export const ResourceDetail = () => {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="end_time" className="text-slate-700">End Time *</Label>
+                          <Label htmlFor="end_time" className="text-slate-200">End Time *</Label>
                           <Select
                             value={bookingData.end_time}
                             onValueChange={(value) => setBookingData((prev) => ({ ...prev, end_time: value }))}
@@ -457,17 +466,17 @@ export const ResourceDetail = () => {
                           >
                             <SelectTrigger
                               id="end_time"
-                              className="bg-white border-slate-300 text-slate-900 focus-visible:ring-slate-400"
+                              className="bg-[#1a1a2e]/60 border-orange-500/30 text-white focus-visible:ring-orange-500/50 backdrop-blur-md"
                               data-testid="booking-end-time-input"
                             >
                               <SelectValue placeholder={bookingData.start_time ? 'Select end' : 'Select start first'} />
                             </SelectTrigger>
-                            <SelectContent className="border-slate-200 bg-white text-slate-900 shadow-xl">
+                            <SelectContent className="border-orange-500/30 bg-[#0f1629]/95 text-white shadow-xl backdrop-blur-xl z-[99999]">
                               {endTimeOptions.map((option) => (
                                 <SelectItem
                                   key={option.value}
                                   value={option.value}
-                                  className="focus:bg-slate-100 focus:text-slate-900 data-[state=checked]:bg-slate-100 data-[state=checked]:text-slate-900"
+                                  className="focus:bg-orange-500/20 focus:text-white data-[state=checked]:bg-orange-500/20 data-[state=checked]:text-white cursor-pointer transition-colors"
                                 >
                                   {option.label}
                                 </SelectItem>
@@ -481,7 +490,7 @@ export const ResourceDetail = () => {
                         Available in 30-minute slots within {resource?.availability || 'the resource availability window'}. Maximum booking duration is 3 hours.
                       </p>
                       <div>
-                        <Label htmlFor="attendees" className="text-slate-700">Expected Attendees *</Label>
+                        <Label htmlFor="attendees" className="text-slate-200">Expected Attendees *</Label>
                         <Input
                           id="attendees"
                           type="number"
@@ -500,30 +509,30 @@ export const ResourceDetail = () => {
                               setAttendeesError('');
                             }
                           }}
-                          className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
+                          className="bg-[#1a1a2e]/60 border-orange-500/30 text-white placeholder:text-slate-500 focus-visible:ring-orange-500/50 backdrop-blur-md"
                           required
                           data-testid="booking-attendees-input"
                         />
-                        {attendeesError && <p className="text-xs text-red-600 mt-1">{attendeesError}</p>}
+                        {attendeesError && <p className="text-xs text-red-400 mt-1">{attendeesError}</p>}
                       </div>
                       <div>
-                        <Label htmlFor="purpose" className="text-slate-700">Purpose *</Label>
+                        <Label htmlFor="purpose" className="text-slate-200">Purpose *</Label>
                         <Textarea
                           id="purpose"
                           rows={3}
                           value={bookingData.purpose}
                           onChange={(e) => setBookingData({ ...bookingData, purpose: e.target.value })}
-                          className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus-visible:ring-slate-400"
+                          className="bg-[#1a1a2e]/60 border-orange-500/30 text-white placeholder:text-slate-500 focus-visible:ring-orange-500/50 backdrop-blur-md resize-none"
                           required
                           placeholder="Briefly describe the purpose of this booking"
                           data-testid="booking-purpose-input"
                         />
                       </div>
-                      <div className="flex gap-2">
-                        <Button type="button" variant="outline" onClick={() => setBookingOpen(false)} className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100">
+                      <div className="flex gap-3 pt-2">
+                        <Button type="button" variant="outline" onClick={() => setBookingOpen(false)} className="flex-1 border-orange-500/40 text-orange-400 hover:bg-orange-500/10 hover:text-orange-300 transition-colors bg-transparent">
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={submitting || !!timeError || !!attendeesError} className="flex-1 bg-[#1e3a5f] hover:bg-slate-800" data-testid="submit-booking-btn">
+                        <Button type="submit" disabled={submitting || !!timeError || !!attendeesError} className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold shadow-[0_0_15px_rgba(249,115,22,0.4)] transition-all border-none" data-testid="submit-booking-btn">
                           {submitting ? 'Submitting...' : 'Submit Request'}
                         </Button>
                       </div>

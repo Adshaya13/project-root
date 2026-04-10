@@ -1,16 +1,347 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { resourceService } from '@/services/resourceService';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { StatusPill } from '@/components/common/StatusPill';
 import { LoadingSpinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Building2, MapPin, Users, Search } from 'lucide-react';
+import { Building2, MapPin, Users, Search, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '@/context/AuthContext';
+
+/* ────────────────────────────────────────
+   Injected CSS — scoped to this page only
+───────────────────────────────────────── */
+const PAGE_STYLES = `
+/* SPINNING BORDER — disabled
+@keyframes border-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}*/
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.5); }
+}
+@keyframes glow-cycle {
+  0%   { box-shadow: 0 0 18px rgba(249,115,22,0.25); }
+  25%  { box-shadow: 0 0 18px rgba(30,58,95,0.25); }
+  50%  { box-shadow: 0 0 18px rgba(124,58,237,0.25); }
+  75%  { box-shadow: 0 0 18px rgba(6,182,212,0.25); }
+  100% { box-shadow: 0 0 18px rgba(249,115,22,0.25); }
+}
+
+/* ─── Page wrapper ─── */
+.br-page {
+  min-height: 100%;
+  background: linear-gradient(135deg, #0a0a15 0%, #0f1629 50%, #0a0a15 100%);
+  padding: 24px;
+  border-radius: 12px;
+}
+
+/* ─── Filter bar ─── */
+.br-filter-bar {
+  background: rgba(15,15,26,0.85);
+  border: 1px solid rgba(249,115,22,0.2);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  backdrop-filter: blur(12px);
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 14px;
+  align-items: center;
+}
+@media (max-width: 768px) {
+  .br-filter-bar { grid-template-columns: 1fr; }
+}
+
+/* Search input — styled like the navbar glowing search */
+.br-search-wrap {
+  position: relative;
+}
+.br-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+.br-search-wrap:focus-within .br-search-icon { color: #f97316; }
+.br-search-input {
+  width: 100%;
+  background: #1a1a2e;
+  border: 1px solid rgba(249,115,22,0.3);
+  border-radius: 10px;
+  padding: 10px 14px 10px 42px;
+  font-size: 14px;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  font-family: inherit;
+}
+.br-search-input::placeholder { color: #64748b; }
+.br-search-input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+}
+
+/* Dark custom select dropdowns */
+.br-select-wrap {
+  position: relative;
+  min-width: 160px;
+}
+.br-select {
+  appearance: none;
+  width: 100%;
+  background: #1a1a2e;
+  border: 1px solid rgba(249,115,22,0.3);
+  border-radius: 10px;
+  padding: 10px 38px 10px 14px;
+  font-size: 14px;
+  color: #fff;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.br-select:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+}
+.br-select option { background: #1a1a2e; color: #fff; }
+.br-select-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #f97316;
+}
+
+.br-count {
+  color: #94a3b8;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.br-count strong { color: #f97316; }
+
+/* ─── Card grid ─── */
+.br-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+@media (max-width: 1024px) { .br-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .br-grid { grid-template-columns: 1fr; } }
+
+/* ─── Individual resource card ─── */
+.br-card-outer {
+  position: relative;
+  border-radius: 18px;
+  padding: 2px;                 /* the 2-px border zone */
+  cursor: pointer;
+  /* animated glow at rest */
+  animation: glow-cycle 4s linear infinite;
+  transition: transform 0.3s ease, animation-duration 0.3s ease;
+}
+/* SPINNING BORDER ::before — disabled
+.br-card-outer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  padding: 2px;
+  background: conic-gradient(
+    from 0deg,
+    #f97316,
+    #1e3a5f,
+    #7c3aed,
+    #06b6d4,
+    #f97316
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: border-spin 4s linear infinite;
+  pointer-events: none;
+}*/
+.br-card-outer:hover {
+  transform: translateY(-4px);
+  animation: none;        /* override with intense hover shadow */
+  box-shadow:
+    0 0 30px rgba(249,115,22,0.45),
+    0 0 60px rgba(30,58,95,0.25);
+}
+.br-card-outer:hover::before {
+  animation-duration: 2s; /* faster spin on hover */
+}
+
+/* Inner card surface */
+.br-card-inner {
+  background: #0f0f1a;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Image zone */
+.br-card-image {
+  position: relative;
+  height: 192px;
+  background: linear-gradient(135deg, #1a1a2e, #0f1629);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.br-card-image img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.br-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 60%, #0f0f1a);
+  pointer-events: none;
+}
+.br-status-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border-radius: 99px;
+  padding: 4px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  backdrop-filter: blur(6px);
+}
+.br-status-active {
+  background: rgba(34,197,94,0.15);
+  border: 1px solid rgba(34,197,94,0.4);
+  color: #22c55e;
+}
+.br-status-inactive {
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #ef4444;
+}
+.br-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.br-dot-green {
+  background: #22c55e;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.br-dot-red { background: #ef4444; }
+
+/* Card body */
+.br-card-body {
+  padding: 18px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.br-card-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.br-type-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(249,115,22,0.12);
+  border: 1px solid rgba(249,115,22,0.35);
+  color: #f97316;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.br-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+.br-meta-icon { color: #f97316; flex-shrink: 0; }
+
+/* Footer buttons */
+.br-card-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+.br-btn-primary {
+  padding: 10px;
+  border-radius: 9px;
+  border: none;
+  background: #f97316;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(249,115,22,0.35);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+}
+.br-btn-primary:hover:not(:disabled) {
+  background: #ea6c0a;
+  box-shadow: 0 6px 25px rgba(249,115,22,0.55);
+}
+.br-btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.br-btn-outline {
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(249,115,22,0.45);
+  background: transparent;
+  color: #f97316;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  font-family: inherit;
+}
+.br-btn-outline:hover {
+  background: rgba(249,115,22,0.1);
+  border-color: rgba(249,115,22,0.7);
+}
+`;
+
+function injectBrStyles() {
+  if (typeof window === 'undefined') return;
+  if (!document.getElementById('br-page-styles')) {
+    const s = document.createElement('style');
+    s.id = 'br-page-styles';
+    s.innerHTML = PAGE_STYLES;
+    document.head.appendChild(s);
+  }
+}
+
+const TYPE_LABELS = {
+  LECTURE_HALL: 'Lecture Hall',
+  LAB: 'Lab',
+  MEETING_ROOM: 'Meeting Room',
+  EQUIPMENT: 'Equipment',
+};
 
 export const BrowseResources = () => {
   const { user } = useContext(AuthContext);
@@ -18,19 +349,28 @@ export const BrowseResources = () => {
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState([]);
   const [filteredResources, setFilteredResources] = useState([]);
-  const [filters, setFilters] = useState({
-    type: 'ALL',
-    status: 'ALL',
-    search: '',
-  });
+  const [filters, setFilters] = useState({ type: 'ALL', status: 'ALL', search: '' });
 
+  // Inject CSS once
+  useEffect(() => { injectBrStyles(); }, []);
+
+  useEffect(() => { fetchResources(); }, []);
+  useEffect(() => { applyFilters(); }, [filters, resources]);
+
+  // Re-fetch whenever the user returns to this tab so status is always fresh
   useEffect(() => {
-    fetchResources();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchResources();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+    };
   }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [filters, resources]);
 
   const fetchResources = async () => {
     try {
@@ -46,15 +386,8 @@ export const BrowseResources = () => {
 
   const applyFilters = () => {
     let filtered = [...resources];
-
-    if (filters.type !== 'ALL') {
-      filtered = filtered.filter((r) => r.type === filters.type);
-    }
-
-    if (filters.status !== 'ALL') {
-      filtered = filtered.filter((r) => r.status === filters.status);
-    }
-
+    if (filters.type !== 'ALL') filtered = filtered.filter((r) => r.type === filters.type);
+    if (filters.status !== 'ALL') filtered = filtered.filter((r) => r.status === filters.status);
     if (filters.search) {
       filtered = filtered.filter(
         (r) =>
@@ -62,7 +395,6 @@ export const BrowseResources = () => {
           r.location.toLowerCase().includes(filters.search.toLowerCase())
       );
     }
-
     setFilteredResources(filtered);
   };
 
@@ -76,51 +408,61 @@ export const BrowseResources = () => {
 
   return (
     <Layout pageTitle="Browse Resources">
-      <div className="space-y-6">
-        {/* Filters */}
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  placeholder="Search resources..."
-                  value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                  className="pl-10"
-                  data-testid="search-input"
-                />
-              </div>
-              <Select value={filters.type} onValueChange={(value) => setFilters({ ...filters, type: value })}>
-                <SelectTrigger data-testid="type-filter">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All Types</SelectItem>
-                  <SelectItem value="LECTURE_HALL">Lecture Hall</SelectItem>
-                  <SelectItem value="LAB">Lab</SelectItem>
-                  <SelectItem value="MEETING_ROOM">Meeting Room</SelectItem>
-                  <SelectItem value="EQUIPMENT">Equipment</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
-                <SelectTrigger data-testid="status-filter">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All Status</SelectItem>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="OUT_OF_SERVICE">Out of Service</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="text-sm text-slate-600 flex items-center">
-                <span className="font-medium">{filteredResources.length}</span>&nbsp;resources found
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="br-page">
 
-        {/* Resources grid */}
+        {/* ── Filter bar ── */}
+        <div className="br-filter-bar">
+          {/* Search */}
+          <div className="br-search-wrap">
+            <Search size={16} className="br-search-icon" />
+            <input
+              className="br-search-input"
+              placeholder="Search resources..."
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              data-testid="search-input"
+            />
+          </div>
+
+          {/* Type filter */}
+          <div className="br-select-wrap">
+            <select
+              className="br-select"
+              value={filters.type}
+              onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+              data-testid="type-filter"
+            >
+              <option value="ALL">All Types</option>
+              <option value="LECTURE_HALL">Lecture Hall</option>
+              <option value="LAB">Lab</option>
+              <option value="MEETING_ROOM">Meeting Room</option>
+              <option value="EQUIPMENT">Equipment</option>
+            </select>
+            <ChevronDown size={15} className="br-select-chevron" />
+          </div>
+
+          {/* Status filter */}
+          <div className="br-select-wrap">
+            <select
+              className="br-select"
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              data-testid="status-filter"
+            >
+              <option value="ALL">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="OUT_OF_SERVICE">Out of Service</option>
+            </select>
+            <ChevronDown size={15} className="br-select-chevron" />
+          </div>
+
+          {/* Count */}
+          <div className="br-count">
+            <strong>{filteredResources.length}</strong> resources found
+          </div>
+        </div>
+
+        {/* ── Resources grid ── */}
         {filteredResources.length === 0 ? (
           <EmptyState
             icon={Building2}
@@ -128,69 +470,83 @@ export const BrowseResources = () => {
             description="Try adjusting your filters or search query"
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredResources.map((resource) => (
-              <Card
-                key={resource.resource_id}
-                className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 overflow-hidden cursor-pointer"
-                onClick={() => navigate(`/resources/${resource.resource_id}`)}
-                data-testid={`resource-card-${resource.resource_id}`}
-              >
-                <div className="h-48 bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
-                  {resource.image_url ? (
-                    <img src={resource.image_url} alt={resource.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Building2 className="h-16 w-16 text-slate-400" />
+          <div className="br-grid">
+            {filteredResources.map((resource) => {
+              const isActive = resource.status === 'ACTIVE';
+              return (
+                <div
+                  key={resource.resource_id}
+                  className="br-card-outer"
+                  onClick={() => navigate(`/resources/${resource.resource_id}`)}
+                  data-testid={`resource-card-${resource.resource_id}`}
+                >
+                  <div className="br-card-inner">
+                    {/* Image */}
+                    <div className="br-card-image">
+                      {resource.image_url ? (
+                        <img src={resource.image_url} alt={resource.name} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Building2 style={{ width: '64px', height: '64px', color: '#334155' }} />
+                        </div>
+                      )}
+                      {/* Gradient overlay */}
+                      <div className="br-image-overlay" />
+                      {/* Status badge */}
+                      <div className={`br-status-badge ${isActive ? 'br-status-active' : 'br-status-inactive'}`}>
+                        <span className={`br-dot ${isActive ? 'br-dot-green' : 'br-dot-red'}`} />
+                        {isActive ? 'ACTIVE' : 'OUT OF SERVICE'}
+                      </div>
                     </div>
-                  )}
-                  <div className="absolute top-3 right-3">
-                    <StatusPill status={resource.status} />
+
+                    {/* Body — content UNCHANGED */}
+                    <div className="br-card-body">
+                      <h3 className="br-card-name" title={resource.name}>
+                        {resource.name}
+                      </h3>
+                      <div>
+                        <span className="br-type-badge">
+                          {TYPE_LABELS[resource.type] || resource.type.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="br-meta-row">
+                        <MapPin size={14} className="br-meta-icon" />
+                        {resource.location}
+                      </div>
+                      <div className="br-meta-row">
+                        <Users size={14} className="br-meta-icon" />
+                        Capacity: {resource.capacity}
+                      </div>
+                    </div>
+
+                    {/* Footer buttons — labels UNCHANGED */}
+                    <div className="br-card-footer">
+                      <button
+                        className="br-btn-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/resources/${resource.resource_id}`, { state: { autoOpenBooking: true } });
+                        }}
+                        disabled={resource.status !== 'ACTIVE'}
+                        data-testid={`book-now-btn-${resource.resource_id}`}
+                      >
+                        Book Now
+                      </button>
+                      <button
+                        className="br-btn-outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/resources/${resource.resource_id}`);
+                        }}
+                        data-testid={`view-details-btn-${resource.resource_id}`}
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-slate-900 mb-2">{resource.name}</h3>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <span className="inline-block px-2 py-1 bg-slate-100 rounded text-xs font-medium">
-                        {resource.type.replace('_', ' ')}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <MapPin className="h-4 w-4" />
-                      {resource.location}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Users className="h-4 w-4" />
-                      Capacity: {resource.capacity}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      className="bg-[#f97316] hover:bg-orange-600"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/resources/${resource.resource_id}`, { state: { autoOpenBooking: true } });
-                      }}
-                      disabled={resource.status !== 'ACTIVE'}
-                      data-testid={`book-now-btn-${resource.resource_id}`}
-                    >
-                      Book Now
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/resources/${resource.resource_id}`);
-                      }}
-                      data-testid={`view-details-btn-${resource.resource_id}`}
-                    >
-                      View Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
