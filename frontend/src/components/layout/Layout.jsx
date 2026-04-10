@@ -6,7 +6,7 @@ export const Layout = ({ children, pageTitle }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0f111a] transition-colors duration-300">
       <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
       <div className="md:pl-16">
         <Navbar onMenuClick={() => setMobileOpen(true)} pageTitle={pageTitle} />

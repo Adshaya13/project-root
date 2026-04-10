@@ -39,6 +39,54 @@ code {
     --input: 226 232 240;
     --ring: 249 115 22;
     --radius: 0.75rem;
+
+    /* Bauhaus card - light mode */
+    --bauhaus-card-bg: #f0f4fb;
+    --bauhaus-card-separator: #d3dce8;
+    --bauhaus-card-inscription-top: #3b4252;
+    --bauhaus-card-inscription-main: #111014;
+    --bauhaus-card-inscription-sub: #5e6473;
+    --bauhaus-card-inscription-progress-label: #454f55;
+    --bauhaus-card-inscription-progress-value: #1c2541;
+    --bauhaus-card-progress-bar-bg: #e5e7eb;
+    --bauhaus-chronicle-bg: #151419;
+    --bauhaus-chronicle-fg: #fff;
+    --bauhaus-chronicle-hover-fg: #fff;
+  }
+
+  .dark {
+    --background: 15 17 26;
+    --foreground: 241 245 249;
+    --card: 22 27 42;
+    --card-foreground: 241 245 249;
+    --popover: 22 27 42;
+    --popover-foreground: 241 245 249;
+    --primary: 56 96 142;
+    --primary-foreground: 255 255 255;
+    --secondary: 30 41 59;
+    --secondary-foreground: 203 213 225;
+    --muted: 30 41 59;
+    --muted-foreground: 148 163 184;
+    --accent: 249 115 22;
+    --accent-foreground: 255 255 255;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 51 65 85;
+    --input: 51 65 85;
+    --ring: 249 115 22;
+
+    /* Bauhaus card - dark mode */
+    --bauhaus-card-bg: #151419;
+    --bauhaus-card-separator: #2F2B2A;
+    --bauhaus-card-inscription-top: #bfc7d5;
+    --bauhaus-card-inscription-main: #f0f0f1;
+    --bauhaus-card-inscription-sub: #a0a1b3;
+    --bauhaus-card-inscription-progress-label: #b5b6c4;
+    --bauhaus-card-inscription-progress-value: #e7e7f7;
+    --bauhaus-card-progress-bar-bg: #363636;
+    --bauhaus-chronicle-bg: #fff;
+    --bauhaus-chronicle-fg: #151419;
+    --bauhaus-chronicle-hover-fg: #fff;
   }
 }
 

@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { NotificationProvider } from "./context/NotificationContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { Toaster } from "./components/ui/sonner";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Login } from "./pages/auth/Login";
@@ -218,14 +219,16 @@ function AppRouter() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <NotificationProvider>
-          <AppRouter />
-          <Toaster position="top-right" />
-        </NotificationProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <NotificationProvider>
+            <AppRouter />
+            <Toaster position="top-right" />
+          </NotificationProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

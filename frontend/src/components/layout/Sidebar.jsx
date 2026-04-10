@@ -90,7 +90,7 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
       onMouseEnter={() => setIsCollapsed(false)}
       onMouseLeave={() => setIsCollapsed(true)}
     >
-      <motion.div className="relative z-40 flex h-full shrink-0 flex-col transition-all text-white" variants={contentVariants}>
+      <motion.div className="relative z-40 flex h-full shrink-0 flex-col transition-all text-black" variants={contentVariants}>
         <motion.ul variants={staggerVariants} className="flex h-full flex-col p-0 m-0">
           <div className="flex grow flex-col items-center">
             <div className="flex h-[72px] w-full shrink-0 border-b border-white/20 p-3 pt-5">
@@ -102,8 +102,8 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
                   <motion.li variants={variants} className="flex-1 flex justify-between items-center overflow-hidden list-none">
                     {!isCollapsed && (
                       <div className="flex flex-col items-start text-left">
-                        <p className="text-base font-bold font-display text-white tracking-tight leading-none mb-1 text-cyan-glow">Campus Hub</p>
-                        <p className="text-[10px] uppercase font-black tracking-widest text-orange-200 leading-none text-orange-glow">{role}</p>
+                        <p className="text-base font-bold font-display text-black tracking-tight leading-none mb-1">Campus Hub</p>
+                        <p className="text-[10px] uppercase font-black tracking-widest text-black leading-none">{role}</p>
                       </div>
                     )}
                   </motion.li>
@@ -116,8 +116,8 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
                 <ScrollArea className="h-16 grow px-3">
                   {sections.map((section, sIdx) => (
                     <div key={sIdx} className="w-full flex-col gap-1 mb-5">
-                       {section.label && !isCollapsed && (
-                         <div className="text-xs font-bold uppercase tracking-[0.15em] text-cyan-100/70 px-3 pb-2 mt-2">
+                           {section.label && !isCollapsed && (
+                         <div className="text-xs font-bold uppercase tracking-[0.15em] text-black/70 px-3 pb-2 mt-2">
                            {section.label}
                          </div>
                        )}
@@ -129,8 +129,8 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
                            className={({ isActive }) => cn(
                              "flex h-11 w-full flex-row items-center rounded-xl px-2.5 transition-all duration-300 font-medium my-1 group hover:-translate-y-0.5 hover:shadow-lg",
                              isActive 
-                               ? "nav-active-strip text-white font-bold bg-white/10" 
-                               : "text-white/70 hover:text-white hover:bg-white/10"
+                               ? "nav-active-strip text-black font-bold bg-white/10" 
+                               : "text-black/70 hover:text-black hover:bg-white/10"
                            )}
                            onClick={onMobileClose}
                          >
@@ -139,7 +139,7 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
                            </div>
                            <motion.li variants={variants} className="flex-1 overflow-hidden ml-3 list-none">
                              {!isCollapsed && (
-                               <p className="text-sm tracking-wide truncate m-0 group-hover:text-cyan-glow transition-all duration-300">{item.title}</p>
+                               <p className="text-sm tracking-wide truncate m-0 group-hover:text-black transition-all duration-300">{item.title}</p>
                              )}
                            </motion.li>
                          </NavLink>
@@ -154,7 +154,7 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
                   <DropdownMenuTrigger asChild>
                     <div className="flex h-12 w-full cursor-pointer flex-row items-center gap-2 rounded-xl px-2 transition-colors hover:bg-white/10 group">
                       <Avatar className="size-8 rounded-lg shadow-sm border border-white/20 group-hover:shadow-[0_0_10px_rgba(255,255,255,0.4)] transition-all">
-                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-cyan-500 text-white font-bold">
+                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-cyan-500 text-black font-bold">
                           {user?.fullName?.charAt(0) || user?.email?.charAt(0) || "U"}
                         </AvatarFallback>
                       </Avatar>
@@ -162,27 +162,27 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
                         {!isCollapsed && (
                           <>
                             <div className="flex flex-col flex-1 truncate">
-                              <p className="text-sm font-semibold truncate text-white m-0 group-hover:text-cyan-glow transition-all">{user?.fullName || user?.email || "Account"}</p>
+                              <p className="text-sm font-semibold truncate text-black m-0 group-hover:text-black transition-all">{user?.fullName || user?.email || "Account"}</p>
                             </div>
-                            <ChevronsUpDown className="h-4 w-4 text-white/50 shrink-0 group-hover:text-white transition-all" />
+                            <ChevronsUpDown className="h-4 w-4 text-black/50 shrink-0 group-hover:text-black transition-all" />
                           </>
                         )}
                       </motion.li>
                     </div>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent sideOffset={10} align="start" className="w-[200px] glass-card border-white/20 shadow-2xl z-[110] bg-slate-900/90 backdrop-blur-xl text-white">
-                    <div className="flex flex-row items-center gap-3 p-3 border-b border-white/10 mb-1 bg-white/5">
+                  <DropdownMenuContent sideOffset={10} align="start" className="w-[200px] glass-card border-black/20 shadow-2xl z-[110] bg-white/95 backdrop-blur-xl text-black">
+                    <div className="flex flex-row items-center gap-3 p-3 border-b border-black/10 mb-1 bg-black/5">
                       <Avatar className="size-9 rounded-lg border border-white/10">
-                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-cyan-500 text-white font-bold">
+                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-cyan-500 text-black font-bold">
                           {user?.fullName?.charAt(0) || user?.email?.charAt(0) || "U"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col text-left overflow-hidden">
-                        <span className="text-sm font-bold truncate text-white text-cyan-glow">{user?.fullName || "User"}</span>
-                        <span className="text-[10px] text-white/60 truncate font-mono">{user?.email || "user@campushub"}</span>
+                        <span className="text-sm font-bold truncate text-black">{user?.fullName || "User"}</span>
+                        <span className="text-[10px] text-black/60 truncate font-mono">{user?.email || "user@campushub"}</span>
                       </div>
                     </div>
-                    <DropdownMenuItem className="cursor-pointer text-orange-400 hover:text-orange-300 focus:bg-orange-500/20 focus:text-orange-300 py-2.5 mx-1 my-1 rounded-md transition-all group" onClick={handleLogout}>
+                    <DropdownMenuItem className="cursor-pointer text-black hover:text-black focus:bg-black/10 focus:text-black py-2.5 mx-1 my-1 rounded-md transition-all group" onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4 group-hover:icon-glow-orange" /> Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -205,15 +205,15 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] md:hidden transition-all duration-300"
             onClick={onMobileClose}
           />
-          <div className="fixed inset-y-0 left-0 w-64 z-[95] md:hidden sidebar-gradient-bg shadow-2xl flex flex-col items-center text-white">
+          <div className="fixed inset-y-0 left-0 w-64 z-[95] md:hidden sidebar-gradient-bg shadow-2xl flex flex-col items-center text-black">
             <div className="flex h-[72px] w-full shrink-0 border-b border-white/20 p-3 pt-5">
               <div className="flex w-full items-center gap-3 px-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(249,115,22,0.6)]">
                   <GraduationCap className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex flex-col items-start text-left flex-1 overflow-hidden">
-                  <p className="text-base font-bold font-display text-white tracking-tight leading-none mb-1 truncate text-cyan-glow">Campus Hub</p>
-                  <p className="text-[10px] uppercase font-black tracking-widest text-orange-200 leading-none text-orange-glow">{role}</p>
+                  <p className="text-base font-bold font-display text-black tracking-tight leading-none mb-1 truncate">Campus Hub</p>
+                  <p className="text-[10px] uppercase font-black tracking-widest text-black leading-none">{role}</p>
                 </div>
               </div>
             </div>
@@ -223,7 +223,7 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
                 {sections.map((section, sIdx) => (
                   <div key={sIdx} className="w-full flex-col gap-1 mb-5">
                       {section.label && (
-                        <div className="text-xs font-bold uppercase tracking-[0.15em] text-cyan-100/70 px-3 pb-2 mt-2">
+                        <div className="text-xs font-bold uppercase tracking-[0.15em] text-black/70 px-3 pb-2 mt-2">
                           {section.label}
                         </div>
                       )}
@@ -235,8 +235,8 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
                           className={({ isActive }) => cn(
                             "flex h-11 w-full flex-row items-center rounded-xl px-2.5 transition-all duration-300 font-medium my-1 group hover:-translate-y-0.5 hover:shadow-lg",
                             isActive 
-                              ? "nav-active-strip text-white font-bold bg-white/10" 
-                              : "text-white/70 hover:text-white hover:bg-white/10 active:scale-[0.98]"
+                              ? "nav-active-strip text-black font-bold bg-white/10" 
+                              : "text-black/70 hover:text-black hover:bg-white/10 active:scale-[0.98]"
                           )}
                           onClick={onMobileClose}
                         >
@@ -244,7 +244,7 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
                             <item.icon className={cn("h-5 w-5 transition-all duration-300", "group-hover:icon-glow-cyan")} />
                           </div>
                           <div className="flex-1 overflow-hidden ml-3">
-                            <p className="text-sm tracking-wide truncate group-hover:text-cyan-glow transition-all duration-300">{item.title}</p>
+                            <p className="text-sm tracking-wide truncate group-hover:text-black transition-all duration-300">{item.title}</p>
                           </div>
                         </NavLink>
                       ))}
@@ -253,7 +253,7 @@ export const Sidebar = ({ mobileOpen, onMobileClose }) => {
               </ScrollArea>
               
               <div className="flex flex-col p-4 border-t border-white/20 bg-black/10 backdrop-blur-lg mt-auto w-full">
-                 <Button variant="outline" className="w-full text-orange-400 border-orange-500/30 hover:bg-orange-500/20 hover:text-orange-300 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] transition-all group" onClick={handleLogout}>
+                 <Button variant="outline" className="w-full text-black border-black/30 hover:bg-black/10 hover:text-black hover:shadow-[0_0_15px_rgba(0,0,0,0.2)] transition-all group" onClick={handleLogout}>
                    <LogOut className="mr-2 h-4 w-4 group-hover:icon-glow-orange transition-all" /> Sign out
                  </Button>
               </div>
