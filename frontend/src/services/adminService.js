@@ -10,8 +10,23 @@ export const adminService = {
     return unwrapData(response);
   },
 
-  async updateRole(userId, role) {
-    const response = await api.put(`/admin/users/${userId}/role`, { role });
+  async getUserDetails(userId) {
+    const response = await api.get(`/admin/users/${userId}`);
+    return unwrapData(response);
+  },
+
+  async updateUserStatus(userId, status) {
+    const response = await api.put(`/admin/users/${userId}/status`, { status });
+    return unwrapData(response);
+  },
+
+  async suspendUser(userId) {
+    const response = await api.put(`/admin/users/${userId}/suspend`);
+    return unwrapData(response);
+  },
+
+  async activateUser(userId) {
+    const response = await api.put(`/admin/users/${userId}/activate`);
     return unwrapData(response);
   },
 };
