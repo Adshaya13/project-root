@@ -138,47 +138,18 @@ const PAGE_STYLES = `
 .br-card-outer {
   position: relative;
   border-radius: 18px;
-  padding: 2px;                 /* the 2-px border zone */
+  padding: 2px;
   cursor: pointer;
-  /* animated glow at rest */
   animation: glow-cycle 4s linear infinite;
   transition: transform 0.3s ease, animation-duration 0.3s ease;
 }
-/* SPINNING BORDER ::before — disabled
-.br-card-outer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 18px;
-  padding: 2px;
-  background: conic-gradient(
-    from 0deg,
-    #f97316,
-    #1e3a5f,
-    #7c3aed,
-    #06b6d4,
-    #f97316
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  animation: border-spin 4s linear infinite;
-  pointer-events: none;
-}*/
 .br-card-outer:hover {
   transform: translateY(-4px);
-  animation: none;        /* override with intense hover shadow */
+  animation: none;
   box-shadow:
     0 0 30px rgba(249,115,22,0.45),
     0 0 60px rgba(30,58,95,0.25);
 }
-.br-card-outer:hover::before {
-  animation-duration: 2s; /* faster spin on hover */
-}
-
-/* Inner card surface */
 .br-card-inner {
   background: #0f0f1a;
   border-radius: 16px;
@@ -197,7 +168,9 @@ const PAGE_STYLES = `
   flex-shrink: 0;
 }
 .br-card-image img {
-  width: 100%; height: 100%; object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .br-image-overlay {
   position: absolute;
@@ -229,7 +202,8 @@ const PAGE_STYLES = `
   color: #ef4444;
 }
 .br-dot {
-  width: 7px; height: 7px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   display: inline-block;
 }
@@ -237,7 +211,9 @@ const PAGE_STYLES = `
   background: #22c55e;
   animation: pulse-dot 2s ease-in-out infinite;
 }
-.br-dot-red { background: #ef4444; }
+.br-dot-red {
+  background: #ef4444;
+}
 
 /* Card body */
 .br-card-body {
@@ -277,7 +253,10 @@ const PAGE_STYLES = `
   font-size: 13px;
   color: #94a3b8;
 }
-.br-meta-icon { color: #f97316; flex-shrink: 0; }
+.br-meta-icon {
+  color: #f97316;
+  flex-shrink: 0;
+}
 
 /* Footer buttons */
 .br-card-footer {
@@ -351,21 +330,28 @@ export const BrowseResources = () => {
   const [filteredResources, setFilteredResources] = useState([]);
   const [filters, setFilters] = useState({ type: 'ALL', status: 'ALL', search: '' });
 
-  // Inject CSS once
-  useEffect(() => { injectBrStyles(); }, []);
+  useEffect(() => {
+    injectBrStyles();
+  }, []);
 
-  useEffect(() => { fetchResources(); }, []);
-  useEffect(() => { applyFilters(); }, [filters, resources]);
+  useEffect(() => {
+    fetchResources();
+  }, []);
 
-  // Re-fetch whenever the user returns to this tab so status is always fresh
+  useEffect(() => {
+    applyFilters();
+  }, [filters, resources]);
+
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         fetchResources();
       }
     };
+
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('focus', handleVisibility);
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('focus', handleVisibility);
@@ -386,8 +372,15 @@ export const BrowseResources = () => {
 
   const applyFilters = () => {
     let filtered = [...resources];
-    if (filters.type !== 'ALL') filtered = filtered.filter((r) => r.type === filters.type);
-    if (filters.status !== 'ALL') filtered = filtered.filter((r) => r.status === filters.status);
+
+    if (filters.type !== 'ALL') {
+      filtered = filtered.filter((r) => r.type === filters.type);
+    }
+
+    if (filters.status !== 'ALL') {
+      filtered = filtered.filter((r) => r.status === filters.status);
+    }
+
     if (filters.search) {
       filtered = filtered.filter(
         (r) =>
@@ -395,6 +388,7 @@ export const BrowseResources = () => {
           r.location.toLowerCase().includes(filters.search.toLowerCase())
       );
     }
+
     setFilteredResources(filtered);
   };
 
@@ -409,10 +403,7 @@ export const BrowseResources = () => {
   return (
     <Layout pageTitle="Browse Resources">
       <div className="br-page">
-
-        {/* ── Filter bar ── */}
         <div className="br-filter-bar">
-          {/* Search */}
           <div className="br-search-wrap">
             <Search size={16} className="br-search-icon" />
             <input
@@ -424,7 +415,6 @@ export const BrowseResources = () => {
             />
           </div>
 
-          {/* Type filter */}
           <div className="br-select-wrap">
             <select
               className="br-select"
@@ -441,7 +431,6 @@ export const BrowseResources = () => {
             <ChevronDown size={15} className="br-select-chevron" />
           </div>
 
-          {/* Status filter */}
           <div className="br-select-wrap">
             <select
               className="br-select"
@@ -456,13 +445,11 @@ export const BrowseResources = () => {
             <ChevronDown size={15} className="br-select-chevron" />
           </div>
 
-          {/* Count */}
           <div className="br-count">
             <strong>{filteredResources.length}</strong> resources found
           </div>
         </div>
 
-        {/* ── Resources grid ── */}
         {filteredResources.length === 0 ? (
           <EmptyState
             icon={Building2}
@@ -473,72 +460,82 @@ export const BrowseResources = () => {
           <div className="br-grid">
             {filteredResources.map((resource) => {
               const isActive = resource.status === 'ACTIVE';
+
               return (
                 <div
-                  key={resource.resource_id}
+                  key={resource.id}
                   className="br-card-outer"
-                  onClick={() => navigate(`/resources/${resource.resource_id}`)}
-                  data-testid={`resource-card-${resource.resource_id}`}
+                  onClick={() => navigate(`/resources/${resource.id}`)}
+                  data-testid={`resource-card-${resource.id}`}
                 >
                   <div className="br-card-inner">
-                    {/* Image */}
                     <div className="br-card-image">
-                      {resource.image_url ? (
-                        <img src={resource.image_url} alt={resource.name} />
+                      {resource.imageUrl ? (
+                        <img src={resource.imageUrl} alt={resource.name} />
                       ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
                           <Building2 style={{ width: '64px', height: '64px', color: '#334155' }} />
                         </div>
                       )}
-                      {/* Gradient overlay */}
+
                       <div className="br-image-overlay" />
-                      {/* Status badge */}
+
                       <div className={`br-status-badge ${isActive ? 'br-status-active' : 'br-status-inactive'}`}>
                         <span className={`br-dot ${isActive ? 'br-dot-green' : 'br-dot-red'}`} />
                         {isActive ? 'ACTIVE' : 'OUT OF SERVICE'}
                       </div>
                     </div>
 
-                    {/* Body — content UNCHANGED */}
                     <div className="br-card-body">
                       <h3 className="br-card-name" title={resource.name}>
                         {resource.name}
                       </h3>
+
                       <div>
                         <span className="br-type-badge">
                           {TYPE_LABELS[resource.type] || resource.type.replace('_', ' ')}
                         </span>
                       </div>
+
                       <div className="br-meta-row">
                         <MapPin size={14} className="br-meta-icon" />
                         {resource.location}
                       </div>
+
                       <div className="br-meta-row">
                         <Users size={14} className="br-meta-icon" />
                         Capacity: {resource.capacity}
                       </div>
                     </div>
 
-                    {/* Footer buttons — labels UNCHANGED */}
                     <div className="br-card-footer">
                       <button
                         className="br-btn-primary"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/resources/${resource.resource_id}`, { state: { autoOpenBooking: true } });
+                          navigate(`/resources/${resource.id}`, { state: { autoOpenBooking: true } });
                         }}
                         disabled={resource.status !== 'ACTIVE'}
-                        data-testid={`book-now-btn-${resource.resource_id}`}
+                        data-testid={`book-now-btn-${resource.id}`}
                       >
                         Book Now
                       </button>
+
                       <button
                         className="br-btn-outline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/resources/${resource.resource_id}`);
+                          navigate(`/resources/${resource.id}`);
                         }}
-                        data-testid={`view-details-btn-${resource.resource_id}`}
+                        data-testid={`view-details-btn-${resource.id}`}
                       >
                         View Details
                       </button>
