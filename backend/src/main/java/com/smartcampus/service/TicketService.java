@@ -66,8 +66,33 @@ public class TicketService {
         return toResponse(saved);
     }
 
-    public List<Map<String, Object>> listAllTickets() {
-        return ticketRepository.findAll().stream().map(this::toResponse).toList();
+    public List<Map<String, Object>> listTickets(String currentUserEmail) {
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        List<Ticket> tickets;
+        if (currentUser.getRole() == User.Role.ADMIN) {
+            tickets = ticketRepository.findAll().stream()
+                    .sorted((left, right) -> {
+                        if (left.getCreatedAt() == null && right.getCreatedAt() == null) {
+                            return 0;
+                        }
+                        if (left.getCreatedAt() == null) {
+                            return 1;
+                        }
+                        if (right.getCreatedAt() == null) {
+                            return -1;
+                        }
+                        return right.getCreatedAt().compareTo(left.getCreatedAt());
+                    })
+                    .toList();
+        } else if (currentUser.getRole() == User.Role.TECHNICIAN) {
+            tickets = ticketRepository.findByAssignedTechnicianIdOrderByCreatedAtDesc(currentUser.getId());
+        } else {
+            tickets = ticketRepository.findByRequesterEmailOrderByCreatedAtDesc(currentUserEmail);
+        }
+
+        return tickets.stream().map(this::toResponse).toList();
     }
 
     public List<Map<String, Object>> listMyTickets(String requesterEmail) {
@@ -87,12 +112,20 @@ public class TicketService {
         User currentUser = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (currentUser.getRole() != User.Role.ADMIN && currentUser.getRole() != User.Role.TECHNICIAN) {
-            throw new AccessDeniedException("Only ADMIN or TECHNICIAN can update ticket status");
+        if (currentUser.getRole() != User.Role.TECHNICIAN) {
+            throw new AccessDeniedException("Only TECHNICIAN can update ticket status");
         }
 
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+
+        if (currentUser.getRole() == User.Role.TECHNICIAN) {
+            boolean assignedTechnician = currentUser.getId().equals(ticket.getAssignedTechnicianId());
+            boolean requester = currentUser.getEmail().equalsIgnoreCase(ticket.getRequesterEmail());
+            if (!assignedTechnician && !requester) {
+                throw new AccessDeniedException("Technician can only update assigned or self-raised tickets");
+            }
+        }
 
         String currentStatus = normalizeStatus(ticket.getStatus());
         String newStatus = normalizeStatus(requestedStatus);
@@ -105,7 +138,7 @@ public class TicketService {
             return toResponse(ticket);
         }
 
-        if (!isAllowedTransition(currentStatus, newStatus)) {
+        if (!isAllowedTransitionForTechnician(currentStatus, newStatus)) {
             throw new BadRequestException("Invalid status transition: " + currentStatus + " -> " + newStatus);
         }
 
@@ -114,7 +147,44 @@ public class TicketService {
         return toResponse(saved);
     }
 
+    public Map<String, Object> assignTicket(String id, String technicianId, String currentUserEmail) {
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (currentUser.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only ADMIN can assign tickets");
+        }
+
+        String normalizedTechnicianId = normalizeBlank(technicianId);
+        if (normalizedTechnicianId == null) {
+            throw new BadRequestException("technician_id is required");
+        }
+
+        User technician = userRepository.findById(normalizedTechnicianId)
+                .orElseThrow(() -> new ResourceNotFoundException("Technician not found"));
+
+        if (technician.getRole() != User.Role.TECHNICIAN) {
+            throw new BadRequestException("Selected user is not a technician");
+        }
+
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+
+        ticket.setAssignedTechnicianId(technician.getId());
+        ticket.setAssignedTechnicianName(technician.getName());
+        ticket.setStatus("ASSIGNED");
+
+        Ticket saved = ticketRepository.save(ticket);
+        return toResponse(saved);
+    }
+
     private boolean isAllowedTransition(String currentStatus, String newStatus) {
+        if ("OPEN".equals(currentStatus) && "ASSIGNED".equals(newStatus)) {
+            return true;
+        }
+        if ("ASSIGNED".equals(currentStatus) && "IN_PROGRESS".equals(newStatus)) {
+            return true;
+        }
         if ("OPEN".equals(currentStatus) && "IN_PROGRESS".equals(newStatus)) {
             return true;
         }
@@ -125,6 +195,39 @@ public class TicketService {
             return true;
         }
         return false;
+    }
+
+    private boolean isAllowedTransitionForTechnician(String currentStatus, String newStatus) {
+        if ("OPEN".equals(currentStatus) && "IN_PROGRESS".equals(newStatus)) {
+            return true;
+        }
+        if ("ASSIGNED".equals(currentStatus) && "IN_PROGRESS".equals(newStatus)) {
+            return true;
+        }
+        if ("IN_PROGRESS".equals(currentStatus) && "RESOLVED".equals(newStatus)) {
+            return true;
+        }
+        return false;
+    }
+
+    public Map<String, Object> closeTicket(String id, String currentUserEmail) {
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (currentUser.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only ADMIN can close tickets");
+        }
+
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+
+        if (!"RESOLVED".equals(normalizeStatus(ticket.getStatus()))) {
+            throw new BadRequestException("Ticket must be RESOLVED before closing");
+        }
+
+        ticket.setStatus("CLOSED");
+        Ticket saved = ticketRepository.save(ticket);
+        return toResponse(saved);
     }
 
     private String normalizeStatus(String status) {
@@ -148,7 +251,11 @@ public class TicketService {
         response.put("status", ticket.getStatus());
         response.put("requester_id", ticket.getRequesterId());
         response.put("requester_name", ticket.getRequesterName());
+        response.put("user_name", ticket.getRequesterName());
         response.put("requester_email", ticket.getRequesterEmail());
+        response.put("assigned_to", ticket.getAssignedTechnicianId());
+        response.put("assigned_to_id", ticket.getAssignedTechnicianId());
+        response.put("assigned_to_name", ticket.getAssignedTechnicianName());
         response.put("images", ticket.getImages() == null ? List.of() : ticket.getImages());
         response.put("comments", List.of());
         response.put("created_at", ticket.getCreatedAt() == null ? null : ticket.getCreatedAt().toString());
