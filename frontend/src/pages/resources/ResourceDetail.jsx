@@ -19,13 +19,13 @@ const SLOT_INTERVAL_MINUTES = 30;
 const MAX_BOOKING_DURATION_MINUTES = 180;
 const OPERATING_START_MINUTES = (7 * 60) + 30;
 const OPERATING_END_MINUTES = (20 * 60) + 30;
-const LATEST_START_MINUTES = OPERATING_END_MINUTES - SLOT_INTERVAL_MINUTES;
-const TIME_TOKEN_PATTERN = /(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/ig;
+const TIME_TOKEN_PATTERN = /(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/gi;
 
 export const ResourceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [loading, setLoading] = useState(true);
   const [resource, setResource] = useState(null);
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -44,10 +44,13 @@ export const ResourceDetail = () => {
     if (!timeValue || !timeValue.includes(':')) {
       return Number.NaN;
     }
+
     const [hours, minutes] = timeValue.split(':').map(Number);
+
     if (!Number.isInteger(hours) || !Number.isInteger(minutes)) {
       return Number.NaN;
     }
+
     return (hours * 60) + minutes;
   };
 
@@ -96,6 +99,7 @@ export const ResourceDetail = () => {
       if (period === 'PM') {
         normalizedHours += 12;
       }
+
       matches.push((normalizedHours * 60) + minutesPart);
     }
 
@@ -106,19 +110,25 @@ export const ResourceDetail = () => {
     return { startMinutes: OPERATING_START_MINUTES, endMinutes: OPERATING_END_MINUTES };
   };
 
-  const availabilityWindow = parseAvailabilityWindow(resource?.availability);
+  const availabilityWindow = parseAvailabilityWindow(resource?.availabilityWindows);
 
   const startTimeOptions = [];
   const latestAllowedStart = Math.min(
     availabilityWindow.endMinutes - SLOT_INTERVAL_MINUTES,
     OPERATING_END_MINUTES - SLOT_INTERVAL_MINUTES
   );
-  for (let minutes = Math.max(availabilityWindow.startMinutes, OPERATING_START_MINUTES); minutes <= latestAllowedStart; minutes += SLOT_INTERVAL_MINUTES) {
+
+  for (
+    let minutes = Math.max(availabilityWindow.startMinutes, OPERATING_START_MINUTES);
+    minutes <= latestAllowedStart;
+    minutes += SLOT_INTERVAL_MINUTES
+  ) {
     startTimeOptions.push({ value: toTimeValue(minutes), label: toTimeLabel(minutes) });
   }
 
   const selectedStartMinutes = toMinutes(bookingData.start_time);
   const endTimeOptions = [];
+
   if (Number.isFinite(selectedStartMinutes)) {
     const minEnd = selectedStartMinutes + SLOT_INTERVAL_MINUTES;
     const maxEnd = Math.min(
@@ -126,6 +136,7 @@ export const ResourceDetail = () => {
       availabilityWindow.endMinutes,
       OPERATING_END_MINUTES
     );
+
     for (let minutes = minEnd; minutes <= maxEnd; minutes += SLOT_INTERVAL_MINUTES) {
       endTimeOptions.push({ value: toTimeValue(minutes), label: toTimeLabel(minutes) });
     }
@@ -135,6 +146,7 @@ export const ResourceDetail = () => {
     if (!timeValue || !timeValue.includes(':')) {
       return false;
     }
+
     const [hours, minutes] = timeValue.split(':').map(Number);
     return Number.isInteger(hours) && Number.isInteger(minutes) && (minutes === 0 || minutes === 30);
   };
@@ -156,7 +168,7 @@ export const ResourceDetail = () => {
     }
 
     if (startMinutes < availabilityWindow.startMinutes || endMinutes > availabilityWindow.endMinutes) {
-      return `Booking must be within the resource availability window (${resource?.availability || 'default hours'})`;
+      return `Booking must be within the resource availability window (${resource?.availabilityWindows || 'default hours'})`;
     }
 
     if ((endMinutes - startMinutes) > MAX_BOOKING_DURATION_MINUTES) {
@@ -168,6 +180,7 @@ export const ResourceDetail = () => {
 
   const getApiErrorMessage = (error) => {
     const responsePayload = error?.response?.data;
+
     if (!responsePayload) {
       return 'Failed to create booking';
     }
@@ -178,7 +191,9 @@ export const ResourceDetail = () => {
 
     const fieldErrors = responsePayload.data;
     if (fieldErrors && typeof fieldErrors === 'object') {
-      const firstError = Object.values(fieldErrors).find((message) => typeof message === 'string' && message.trim());
+      const firstError = Object.values(fieldErrors).find(
+        (message) => typeof message === 'string' && message.trim()
+      );
       if (firstError) {
         return firstError;
       }
@@ -191,15 +206,16 @@ export const ResourceDetail = () => {
     fetchResource();
   }, [id]);
 
-  // Re-fetch whenever the user returns to this tab so status stays current
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         fetchResource();
       }
     };
+
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('focus', handleVisibility);
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('focus', handleVisibility);
@@ -208,7 +224,13 @@ export const ResourceDetail = () => {
 
   useEffect(() => {
     setTimeError(getTimeValidationError(bookingData.start_time, bookingData.end_time));
-  }, [bookingData.start_time, bookingData.end_time]);
+  }, [bookingData.start_time, bookingData.end_time, resource]);
+
+  useEffect(() => {
+    if (location.state?.autoOpenBooking && resource?.status === 'ACTIVE') {
+      setBookingOpen(true);
+    }
+  }, [location.state, resource]);
 
   const fetchResource = async () => {
     try {
@@ -223,12 +245,14 @@ export const ResourceDetail = () => {
 
   const handleBooking = async (e) => {
     e.preventDefault();
+
     if (resource.status === 'OUT_OF_SERVICE') {
       toast.error('This resource is currently out of service');
       return;
     }
 
     const attendeesCount = parseInt(bookingData.attendees, 10);
+
     if (Number.isNaN(attendeesCount) || attendeesCount < 1) {
       const message = 'Expected attendees must be at least 1';
       setAttendeesError(message);
@@ -242,6 +266,7 @@ export const ResourceDetail = () => {
       toast.error(message);
       return;
     }
+
     setAttendeesError('');
 
     if (!bookingData.start_time || !bookingData.end_time) {
@@ -253,26 +278,33 @@ export const ResourceDetail = () => {
 
     const timeValidationError = getTimeValidationError(bookingData.start_time, bookingData.end_time);
     if (timeValidationError) {
-      const message = timeValidationError;
-      setTimeError(message);
-      toast.error(message);
+      setTimeError(timeValidationError);
+      toast.error(timeValidationError);
       return;
     }
 
     setTimeError('');
-
     setSubmitting(true);
+
     try {
       await bookingService.create({
-        resource_id: resource.resource_id,
+        resource_id: resource.id,
         ...bookingData,
         attendees: attendeesCount,
       });
+
       toast.success('Booking request submitted! Awaiting admin approval.');
       setBookingOpen(false);
-      setBookingData({ date: '', start_time: '', end_time: '', purpose: '', attendees: '' });
+      setBookingData({
+        date: '',
+        start_time: '',
+        end_time: '',
+        purpose: '',
+        attendees: '',
+      });
       setAttendeesError('');
       setTimeError('');
+      fetchResource();
     } catch (error) {
       if (error.response?.status === 409) {
         toast.error('This resource is already booked for the selected time. Please choose another slot.');
@@ -305,8 +337,10 @@ export const ResourceDetail = () => {
   const today = new Date();
   const minBookingDate = new Date(today);
   minBookingDate.setDate(today.getDate() + 1);
+
   const maxBookingDate = new Date(today);
   maxBookingDate.setDate(today.getDate() + 14);
+
   const minDate = minBookingDate.toISOString().split('T')[0];
   const maxDate = maxBookingDate.toISOString().split('T')[0];
 
@@ -319,13 +353,11 @@ export const ResourceDetail = () => {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Image */}
             <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
               <div className="h-80 bg-gradient-to-br from-slate-100 to-slate-200 relative">
-                {resource.image_url ? (
-                  <img src={resource.image_url} alt={resource.name} className="w-full h-full object-cover" />
+                {resource.imageUrl ? (
+                  <img src={resource.imageUrl} alt={resource.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Building2 className="h-32 w-32 text-slate-400" />
@@ -334,7 +366,6 @@ export const ResourceDetail = () => {
               </div>
             </Card>
 
-            {/* Description */}
             <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader>
                 <CardTitle>About this resource</CardTitle>
@@ -344,7 +375,6 @@ export const ResourceDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Availability */}
             <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader>
                 <CardTitle>Availability</CardTitle>
@@ -352,32 +382,37 @@ export const ResourceDetail = () => {
               <CardContent>
                 <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-slate-600" />
-                  <span className="text-slate-900">{resource.availability}</span>
+                  <span className="text-slate-900">
+                    {resource.availabilityWindows || 'No availability window provided'}
+                  </span>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
             <Card className="bg-white border-slate-200 shadow-sm">
               <CardHeader>
                 <CardTitle>{resource.name}</CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 <div>
                   <StatusPill status={resource.status} />
                 </div>
+
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-slate-600">
                     <span className="inline-block px-3 py-1 bg-slate-100 rounded-lg text-sm font-medium">
                       {resource.type.replace('_', ' ')}
                     </span>
                   </div>
+
                   <div className="flex items-center gap-2 text-slate-600">
                     <MapPin className="h-5 w-5" />
                     <span>{resource.location}</span>
                   </div>
+
                   <div className="flex items-center gap-2 text-slate-600">
                     <Users className="h-5 w-5" />
                     <span>Capacity: {resource.capacity} people</span>
@@ -395,16 +430,22 @@ export const ResourceDetail = () => {
                       Book This Resource
                     </Button>
                   </DialogTrigger>
+
                   <DialogContent
                     overlayClassName="bg-black/60 backdrop-blur-sm z-[50]"
                     className="sm:max-w-md bg-[#0f1629]/80 backdrop-blur-xl border border-orange-500/30 shadow-[0_0_40px_rgba(249,115,22,0.15)] text-white z-[50]"
                   >
                     <DialogHeader>
-                      <DialogTitle className="text-white font-bold text-xl drop-shadow-md">Book {resource.name}</DialogTitle>
+                      <DialogTitle className="text-white font-bold text-xl drop-shadow-md">
+                        Book {resource.name}
+                      </DialogTitle>
                     </DialogHeader>
+
                     <form onSubmit={handleBooking} className="space-y-4">
                       <div>
-                        <Label htmlFor="date" className="text-slate-200">Date *</Label>
+                        <Label htmlFor="date" className="text-slate-200">
+                          Date *
+                        </Label>
                         <Input
                           id="date"
                           type="date"
@@ -417,19 +458,28 @@ export const ResourceDetail = () => {
                           data-testid="booking-date-input"
                         />
                       </div>
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="start_time" className="text-slate-200">Start Time *</Label>
+                          <Label htmlFor="start_time" className="text-slate-200">
+                            Start Time *
+                          </Label>
                           <Select
                             value={bookingData.start_time}
                             onValueChange={(value) => {
                               setBookingData((prev) => {
                                 const startMinutes = toMinutes(value);
                                 const endMinutes = toMinutes(prev.end_time);
-                                const maxEndMinutes = Math.min(startMinutes + MAX_BOOKING_DURATION_MINUTES, OPERATING_END_MINUTES);
-                                const endInvalid = !Number.isFinite(endMinutes)
-                                  || endMinutes <= startMinutes
-                                  || endMinutes > maxEndMinutes;
+                                const maxEndMinutes = Math.min(
+                                  startMinutes + MAX_BOOKING_DURATION_MINUTES,
+                                  availabilityWindow.endMinutes,
+                                  OPERATING_END_MINUTES
+                                );
+
+                                const endInvalid =
+                                  !Number.isFinite(endMinutes) ||
+                                  endMinutes <= startMinutes ||
+                                  endMinutes > maxEndMinutes;
 
                                 return {
                                   ...prev,
@@ -446,6 +496,7 @@ export const ResourceDetail = () => {
                             >
                               <SelectValue placeholder="Select start" />
                             </SelectTrigger>
+
                             <SelectContent className="border-orange-500/30 bg-[#0f1629]/95 text-white shadow-xl backdrop-blur-xl z-[99999]">
                               {startTimeOptions.map((option) => (
                                 <SelectItem
@@ -459,11 +510,16 @@ export const ResourceDetail = () => {
                             </SelectContent>
                           </Select>
                         </div>
+
                         <div>
-                          <Label htmlFor="end_time" className="text-slate-200">End Time *</Label>
+                          <Label htmlFor="end_time" className="text-slate-200">
+                            End Time *
+                          </Label>
                           <Select
                             value={bookingData.end_time}
-                            onValueChange={(value) => setBookingData((prev) => ({ ...prev, end_time: value }))}
+                            onValueChange={(value) =>
+                              setBookingData((prev) => ({ ...prev, end_time: value }))
+                            }
                             disabled={!bookingData.start_time}
                           >
                             <SelectTrigger
@@ -473,6 +529,7 @@ export const ResourceDetail = () => {
                             >
                               <SelectValue placeholder={bookingData.start_time ? 'Select end' : 'Select start first'} />
                             </SelectTrigger>
+
                             <SelectContent className="border-orange-500/30 bg-[#0f1629]/95 text-white shadow-xl backdrop-blur-xl z-[99999]">
                               {endTimeOptions.map((option) => (
                                 <SelectItem
@@ -487,12 +544,19 @@ export const ResourceDetail = () => {
                           </Select>
                         </div>
                       </div>
+
                       {timeError && <p className="text-xs text-red-600 -mt-2">{timeError}</p>}
+
                       <p className="text-xs text-slate-500 -mt-2">
-                        Available in 30-minute slots within {resource?.availability || 'the resource availability window'}. Maximum booking duration is 3 hours.
+                        Available in 30-minute slots within{' '}
+                        {resource?.availabilityWindows || 'the resource availability window'}. Maximum booking duration is
+                        3 hours.
                       </p>
+
                       <div>
-                        <Label htmlFor="attendees" className="text-slate-200">Expected Attendees *</Label>
+                        <Label htmlFor="attendees" className="text-slate-200">
+                          Expected Attendees *
+                        </Label>
                         <Input
                           id="attendees"
                           type="number"
@@ -502,7 +566,9 @@ export const ResourceDetail = () => {
                           onChange={(e) => {
                             const value = e.target.value;
                             setBookingData({ ...bookingData, attendees: value });
+
                             const count = parseInt(value, 10);
+
                             if (!value) {
                               setAttendeesError('');
                             } else if (!Number.isNaN(count) && count < 1) {
@@ -519,8 +585,11 @@ export const ResourceDetail = () => {
                         />
                         {attendeesError && <p className="text-xs text-red-400 mt-1">{attendeesError}</p>}
                       </div>
+
                       <div>
-                        <Label htmlFor="purpose" className="text-slate-200">Purpose *</Label>
+                        <Label htmlFor="purpose" className="text-slate-200">
+                          Purpose *
+                        </Label>
                         <Textarea
                           id="purpose"
                           rows={3}
@@ -532,11 +601,23 @@ export const ResourceDetail = () => {
                           data-testid="booking-purpose-input"
                         />
                       </div>
+
                       <div className="flex gap-3 pt-2">
-                        <Button type="button" variant="outline" onClick={() => setBookingOpen(false)} className="flex-1 border-orange-500/40 text-orange-400 hover:bg-orange-500/10 hover:text-orange-300 transition-colors bg-transparent">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setBookingOpen(false)}
+                          className="flex-1 border-orange-500/40 text-orange-400 hover:bg-orange-500/10 hover:text-orange-300 transition-colors bg-transparent"
+                        >
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={submitting || !!timeError || !!attendeesError} className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold shadow-[0_0_15px_rgba(249,115,22,0.4)] transition-all border-none" data-testid="submit-booking-btn">
+
+                        <Button
+                          type="submit"
+                          disabled={submitting || !!timeError || !!attendeesError}
+                          className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold shadow-[0_0_15px_rgba(249,115,22,0.4)] transition-all border-none"
+                          data-testid="submit-booking-btn"
+                        >
                           {submitting ? 'Submitting...' : 'Submit Request'}
                         </Button>
                       </div>
