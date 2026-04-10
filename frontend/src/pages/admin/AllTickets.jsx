@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusPill } from '@/components/common/StatusPill';
 import { PriorityBadge } from '@/components/common/PriorityBadge';
 import { LoadingSpinner } from '@/components/common/Spinner';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { formatDate } from '@/utils/formatDate';
 import { toast } from 'sonner';
 
@@ -19,30 +20,54 @@ export const AllTickets = () => {
   const [tickets, setTickets] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [filter, setFilter] = useState('ALL');
+  const [pendingAssignment, setPendingAssignment] = useState(null);
+  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    let ticketsData = [];
     try {
-      const [ticketsData, techData] = await Promise.all([ticketService.getAll(), adminService.getUsers({ role: 'TECHNICIAN' })]);
+      ticketsData = await ticketService.getAll();
       setTickets(ticketsData);
-      setTechnicians(techData);
     } catch (error) {
       toast.error('Failed to load tickets');
+      setTickets([]);
+    }
+
+    try {
+      const techData = await adminService.getUsers({ role: 'TECHNICIAN' });
+      setTechnicians(Array.isArray(techData) ? techData : []);
+    } catch (error) {
+      setTechnicians([]);
+      if (ticketsData.length > 0) {
+        const serverMessage = error?.response?.data?.message || error?.message;
+        toast.error(serverMessage
+          ? `Technician list unavailable (${serverMessage}). Assignment is temporarily disabled.`
+          : 'Technician list unavailable. Assignment is temporarily disabled.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAssign = async (ticketId, technicianId) => {
+  const handleAssign = async () => {
+    if (!pendingAssignment) {
+      return;
+    }
+
+    setAssigning(true);
     try {
-      await ticketService.assign(ticketId, technicianId);
+      await ticketService.assign(pendingAssignment.ticketId, pendingAssignment.technicianId);
       toast.success('Ticket assigned successfully');
-      fetchData();
+      setPendingAssignment(null);
+      await fetchData();
     } catch (error) {
       toast.error('Failed to assign ticket');
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -63,6 +88,7 @@ export const AllTickets = () => {
           <TabsList className="bg-white border border-slate-200">
             <TabsTrigger value="ALL">All</TabsTrigger>
             <TabsTrigger value="OPEN">Open</TabsTrigger>
+            <TabsTrigger value="ASSIGNED">Assigned</TabsTrigger>
             <TabsTrigger value="IN_PROGRESS">In Progress</TabsTrigger>
             <TabsTrigger value="RESOLVED">Resolved</TabsTrigger>
             <TabsTrigger value="CLOSED">Closed</TabsTrigger>
@@ -91,7 +117,7 @@ export const AllTickets = () => {
                     <tbody>
                       {filteredTickets.map((ticket) => (
                         <tr key={ticket.ticket_id} className="border-b border-slate-100 hover:bg-slate-50">
-                          <td className="py-3 px-4 text-sm text-slate-900">{ticket.user_name}</td>
+                          <td className="py-3 px-4 text-sm text-slate-900">{ticket.requester_name || ticket.user_name || 'Unknown'}</td>
                           <td className="py-3 px-4 text-sm text-slate-600">{ticket.location}</td>
                           <td className="py-3 px-4 text-sm text-slate-600">{ticket.category}</td>
                           <td className="py-3 px-4">
@@ -101,21 +127,34 @@ export const AllTickets = () => {
                             <StatusPill status={ticket.status} />
                           </td>
                           <td className="py-3 px-4 text-sm text-slate-600">
-                            {ticket.assigned_to ? (
+                            {ticket.assigned_to_name ? (
                               <span>{ticket.assigned_to_name}</span>
                             ) : (
-                              <Select onValueChange={(value) => handleAssign(ticket.ticket_id, value)}>
+                              technicians.length > 0 ? (
+                              <Select
+                                onValueChange={(value) => {
+                                  const technician = technicians.find((tech) => tech.user_id === value || tech.id === value);
+                                  setPendingAssignment({
+                                    ticketId: ticket.ticket_id,
+                                    technicianId: value,
+                                    technicianName: technician?.name || 'selected technician',
+                                  });
+                                }}
+                              >
                                 <SelectTrigger className="w-32 h-8">
                                   <SelectValue placeholder="Assign" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {technicians.map((tech) => (
-                                    <SelectItem key={tech.user_id} value={tech.user_id}>
+                                    <SelectItem key={tech.user_id || tech.id} value={tech.user_id || tech.id}>
                                       {tech.name}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
+                              ) : (
+                                <span className="text-xs text-slate-500">Not Assigned</span>
+                              )
                             )}
                           </td>
                           <td className="py-3 px-4 text-sm text-slate-600">{formatDate(ticket.created_at)}</td>
@@ -134,6 +173,23 @@ export const AllTickets = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(pendingAssignment)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingAssignment(null);
+          }
+        }}
+        title="Confirm Technician Assignment"
+        description={
+          pendingAssignment
+            ? `Assign this ticket to ${pendingAssignment.technicianName}? This will set the status to ASSIGNED.`
+            : 'Confirm assignment'
+        }
+        onConfirm={handleAssign}
+        confirmText={assigning ? 'Assigning...' : 'Confirm Assignment'}
+      />
     </Layout>
   );
 };
