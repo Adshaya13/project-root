@@ -44,7 +44,8 @@ export const AllBookings = () => {
 
   const handleApprove = async (booking) => {
     try {
-      await bookingService.approve(booking.booking_id);
+      const idToApprove = booking.id || booking.booking_id || booking.bookingId;
+      await bookingService.approve(idToApprove);
       toast.success('Booking approved. User notified.');
       fetchBookings();
     } catch (error) {
@@ -59,7 +60,8 @@ export const AllBookings = () => {
     }
 
     try {
-      await bookingService.reject(selectedBooking.booking_id, rejectionReason);
+      const idToReject = selectedBooking.id || selectedBooking.booking_id || selectedBooking.bookingId;
+      await bookingService.reject(idToReject, rejectionReason);
       toast.success('Booking rejected. User notified.');
       setRejectDialogOpen(false);
       setRejectionReason('');
@@ -114,7 +116,7 @@ export const AllBookings = () => {
                     </thead>
                     <tbody>
                       {filteredBookings.map((booking) => (
-                        <tr key={booking.booking_id} className="border-b border-slate-100 hover:bg-slate-50">
+                        <tr key={booking.id || booking.booking_id || booking.bookingId} className="border-b border-slate-100 hover:bg-slate-50">
                           <td className="py-3 px-4 text-sm text-slate-900">{booking.user_name}</td>
                           <td className="py-3 px-4 text-sm text-slate-900">{booking.resource_name}</td>
                           <td className="py-3 px-4 text-sm text-slate-600">{formatDate(booking.date)}</td>

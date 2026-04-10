@@ -158,10 +158,7 @@ public class BookingService {
         booking.setApprovedAt(null);
         Booking updated = bookingRepository.save(booking);
 
-        // Reset resource to active upon rejection
-        Resource resource = findResourceById(updated.getResourceId());
-        resource.setStatus(Resource.ResourceStatus.ACTIVE);
-        resourceRepository.save(resource);
+        updateResourceStatusAfterCancellationOrRejection(updated.getResourceId());
 
         return BookingDTO.Response.from(updated);
     }
@@ -184,12 +181,22 @@ public class BookingService {
         booking.setApprovedAt(null);
         Booking updated = bookingRepository.save(booking);
 
-        // Reset resource to active upon cancellation
-        Resource resource = findResourceById(updated.getResourceId());
-        resource.setStatus(Resource.ResourceStatus.ACTIVE);
-        resourceRepository.save(resource);
+        updateResourceStatusAfterCancellationOrRejection(updated.getResourceId());
 
         return BookingDTO.Response.from(updated);
+    }
+
+    private void updateResourceStatusAfterCancellationOrRejection(String resourceId) {
+        boolean hasApproved = bookingRepository.existsByResourceIdAndStatusAndDateGreaterThanEqual(
+            resourceId, Booking.BookingStatus.APPROVED, LocalDate.now());
+            
+        if (!hasApproved) {
+            Resource resource = findResourceById(resourceId);
+            if (resource.getStatus() != Resource.ResourceStatus.ACTIVE) {
+                resource.setStatus(Resource.ResourceStatus.ACTIVE);
+                resourceRepository.save(resource);
+            }
+        }
     }
 
     private List<Booking> findOverlappingBookings(
