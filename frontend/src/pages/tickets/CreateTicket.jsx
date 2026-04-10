@@ -34,9 +34,10 @@ export const CreateTicket = () => {
   const fetchResources = async () => {
     try {
       const data = await resourceService.getAll();
-      setResources(data);
+      setResources(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to load resources');
+      setResources([]);
     }
   };
 
@@ -126,7 +127,7 @@ export const CreateTicket = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {resources.map((resource) => (
+                    {(Array.isArray(resources) ? resources : []).map((resource) => (
                       <SelectItem key={resource.resource_id} value={resource.resource_id}>
                         {resource.name} - {resource.location}
                       </SelectItem>
