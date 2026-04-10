@@ -112,8 +112,8 @@ public class TicketService {
         User currentUser = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (currentUser.getRole() != User.Role.ADMIN && currentUser.getRole() != User.Role.TECHNICIAN) {
-            throw new AccessDeniedException("Only ADMIN or TECHNICIAN can update ticket status");
+        if (currentUser.getRole() != User.Role.TECHNICIAN) {
+            throw new AccessDeniedException("Only TECHNICIAN can update ticket status");
         }
 
         Ticket ticket = ticketRepository.findById(id)
@@ -138,7 +138,7 @@ public class TicketService {
             return toResponse(ticket);
         }
 
-        if (!isAllowedTransition(currentStatus, newStatus)) {
+        if (!isAllowedTransitionForTechnician(currentStatus, newStatus)) {
             throw new BadRequestException("Invalid status transition: " + currentStatus + " -> " + newStatus);
         }
 
@@ -195,6 +195,39 @@ public class TicketService {
             return true;
         }
         return false;
+    }
+
+    private boolean isAllowedTransitionForTechnician(String currentStatus, String newStatus) {
+        if ("OPEN".equals(currentStatus) && "IN_PROGRESS".equals(newStatus)) {
+            return true;
+        }
+        if ("ASSIGNED".equals(currentStatus) && "IN_PROGRESS".equals(newStatus)) {
+            return true;
+        }
+        if ("IN_PROGRESS".equals(currentStatus) && "RESOLVED".equals(newStatus)) {
+            return true;
+        }
+        return false;
+    }
+
+    public Map<String, Object> closeTicket(String id, String currentUserEmail) {
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (currentUser.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only ADMIN can close tickets");
+        }
+
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+
+        if (!"RESOLVED".equals(normalizeStatus(ticket.getStatus()))) {
+            throw new BadRequestException("Ticket must be RESOLVED before closing");
+        }
+
+        ticket.setStatus("CLOSED");
+        Ticket saved = ticketRepository.save(ticket);
+        return toResponse(saved);
     }
 
     private String normalizeStatus(String status) {
