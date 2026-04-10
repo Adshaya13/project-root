@@ -48,6 +48,21 @@ export const MyBookings = () => {
 
   const filteredBookings = filter === 'ALL' ? bookings : bookings.filter((b) => b.status === filter);
 
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'APPROVED':
+        return 'Confirmed';
+      case 'PENDING':
+        return 'Pending';
+      case 'REJECTED':
+        return 'Rejected';
+      case 'CANCELLED':
+        return 'Cancelled';
+      default:
+        return status;
+    }
+  };
+
   if (loading) {
     return (
       <Layout pageTitle="My Bookings">
@@ -61,11 +76,11 @@ export const MyBookings = () => {
       <div className="space-y-6">
         <Tabs value={filter} onValueChange={setFilter} className="w-full">
           <TabsList className="bg-white border border-slate-200">
-            <TabsTrigger value="ALL" data-testid="filter-all">All</TabsTrigger>
-            <TabsTrigger value="PENDING" data-testid="filter-pending">Pending</TabsTrigger>
-            <TabsTrigger value="APPROVED" data-testid="filter-approved">Approved</TabsTrigger>
-            <TabsTrigger value="REJECTED" data-testid="filter-rejected">Rejected</TabsTrigger>
-            <TabsTrigger value="CANCELLED" data-testid="filter-cancelled">Cancelled</TabsTrigger>
+            <TabsTrigger value="ALL" className="text-slate-600 data-[state=active]:text-slate-900" data-testid="filter-all">All</TabsTrigger>
+            <TabsTrigger value="PENDING" className="text-slate-600 data-[state=active]:text-slate-900" data-testid="filter-pending">Pending</TabsTrigger>
+            <TabsTrigger value="APPROVED" className="text-slate-600 data-[state=active]:text-slate-900" data-testid="filter-approved">Confirmed</TabsTrigger>
+            <TabsTrigger value="REJECTED" className="text-slate-600 data-[state=active]:text-slate-900" data-testid="filter-rejected">Rejected</TabsTrigger>
+            <TabsTrigger value="CANCELLED" className="text-slate-600 data-[state=active]:text-slate-900" data-testid="filter-cancelled">Cancelled</TabsTrigger>
           </TabsList>
 
           <TabsContent value={filter} className="mt-6">
@@ -110,6 +125,7 @@ export const MyBookings = () => {
                             <td className="py-3 px-4 text-sm text-slate-600">{booking.attendees}</td>
                             <td className="py-3 px-4">
                               <StatusPill status={booking.status} />
+                              <p className="text-xs text-slate-500 mt-1">{getStatusLabel(booking.status)}</p>
                               {booking.status === 'REJECTED' && booking.rejection_reason && (
                                 <p className="text-xs text-red-600 mt-1" title={booking.rejection_reason}>
                                   Reason: {booking.rejection_reason}
@@ -117,7 +133,7 @@ export const MyBookings = () => {
                               )}
                             </td>
                             <td className="py-3 px-4">
-                              {booking.status === 'APPROVED' && (
+                              {(booking.status === 'APPROVED' || booking.status === 'PENDING') && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
