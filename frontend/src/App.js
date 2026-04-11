@@ -184,10 +184,12 @@ function AppRouter() {
       <Route
         path="/403"
         element={
-          <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
+          <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] dark:bg-[#0f111a] transition-colors duration-300">
             <div className="text-center">
-              <h1 className="text-6xl font-bold text-slate-900 mb-4">403</h1>
-              <p className="text-xl text-slate-600 mb-8">
+              <h1 className="text-6xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+                403
+              </h1>
+              <p className="text-xl text-slate-600 dark:text-slate-300 mb-8">
                 You don't have permission to access this page
               </p>
               <a href="/" className="text-[#f97316] hover:underline">
@@ -202,10 +204,14 @@ function AppRouter() {
       <Route
         path="*"
         element={
-          <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
+          <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] dark:bg-[#0f111a] transition-colors duration-300">
             <div className="text-center">
-              <h1 className="text-6xl font-bold text-slate-900 mb-4">404</h1>
-              <p className="text-xl text-slate-600 mb-8">Page not found</p>
+              <h1 className="text-6xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+                404
+              </h1>
+              <p className="text-xl text-slate-600 dark:text-slate-300 mb-8">
+                Page not found
+              </p>
               <a href="/" className="text-[#f97316] hover:underline">
                 Go back home
               </a>

@@ -9,7 +9,7 @@ export const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] dark:bg-[#0f111a] transition-colors duration-300">
         <LoadingSpinner message="Verifying access..." />
       </div>
     );
