@@ -10,6 +10,11 @@ export const adminService = {
     return unwrapData(response);
   },
 
+  async updateUser(userId, payload) {
+    const response = await api.put(`/admin/users/${userId}`, payload);
+    return unwrapData(response);
+  },
+
   async getUserDetails(userId) {
     const response = await api.get(`/admin/users/${userId}`);
     return unwrapData(response);

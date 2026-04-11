@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -97,6 +98,79 @@ public class AdminController {
             "User status updated to " + status));
     }
 
+    @PutMapping("/users/{userId}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateUser(
+            @PathVariable String userId,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+
+        if (authentication == null || !hasAdminRole(authentication)) {
+            throw new AccessDeniedException("Only ADMIN can edit users");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        String adminEmail = authentication.getName();
+        boolean isSelf = user.getEmail() != null && user.getEmail().equalsIgnoreCase(adminEmail);
+
+        String requestedName = normalizeBlank(asString(request.get("name")));
+        String requestedEmail = normalizeEmail(asString(request.get("email")));
+        String requestedRoleRaw = normalizeBlank(asString(request.get("role")));
+        Boolean requestedActive = parseOptionalBoolean(request.get("active"), "active");
+
+        boolean changed = false;
+
+        if (requestedName != null && !Objects.equals(requestedName, user.getName())) {
+            user.setName(requestedName);
+            changed = true;
+        }
+
+        if (requestedEmail != null && !requestedEmail.equalsIgnoreCase(user.getEmail())) {
+            if (isSelf) {
+                throw new BadRequestException("Cannot change your own admin email");
+            }
+            if (userRepository.existsByEmail(requestedEmail)) {
+                throw new BadRequestException("Email is already registered");
+            }
+            user.setEmail(requestedEmail);
+            changed = true;
+        }
+
+        if (requestedRoleRaw != null) {
+            User.Role requestedRole;
+            try {
+                requestedRole = User.Role.valueOf(requestedRoleRaw.toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                throw new BadRequestException("Invalid role. Allowed values: USER, ADMIN, TECHNICIAN");
+            }
+
+            if (isSelf && requestedRole != User.Role.ADMIN) {
+                throw new BadRequestException("Cannot remove ADMIN role from your own account");
+            }
+
+            if (user.getRole() != requestedRole) {
+                user.setRole(requestedRole);
+                changed = true;
+            }
+        }
+
+        if (requestedActive != null && requestedActive != user.isActive()) {
+            if (isSelf && !requestedActive) {
+                throw new BadRequestException("Cannot deactivate your own admin account");
+            }
+            user.setActive(requestedActive);
+            changed = true;
+        }
+
+        if (!changed) {
+            throw new BadRequestException("No valid user changes provided");
+        }
+
+        User updated = userRepository.save(user);
+        return ResponseEntity.ok(ApiResponse.success(userToResponse(updated), "User updated successfully"));
+    }
+
     @PutMapping("/users/{userId}/suspend")
     public ResponseEntity<ApiResponse<Map<String, Object>>> suspendUser(
             @PathVariable String userId,
@@ -165,5 +239,41 @@ public class AdminController {
     private boolean hasAdminRole(Authentication authentication) {
         return authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private String asString(Object value) {
+        return value instanceof String ? (String) value : null;
+    }
+
+    private Boolean parseOptionalBoolean(Object value, String fieldName) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Boolean boolValue) {
+            return boolValue;
+        }
+        if (value instanceof String stringValue) {
+            String normalized = stringValue.trim().toLowerCase(Locale.ROOT);
+            if ("true".equals(normalized)) {
+                return true;
+            }
+            if ("false".equals(normalized)) {
+                return false;
+            }
+        }
+        throw new BadRequestException(fieldName + " must be true or false");
+    }
+
+    private String normalizeEmail(String value) {
+        String normalized = normalizeBlank(value);
+        return normalized == null ? null : normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeBlank(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
