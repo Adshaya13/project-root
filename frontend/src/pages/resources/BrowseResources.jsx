@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { resourceService } from '@/services/resourceService';
 import { LoadingSpinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Building2, MapPin, Users, Search, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '@/context/AuthContext';
 
 /* ────────────────────────────────────────
    Injected CSS — scoped to this page only
@@ -28,18 +27,47 @@ const PAGE_STYLES = `
   100% { box-shadow: 0 0 18px rgba(249,115,22,0.25); }
 }
 
+/* ─── Theme tokens ─── */
+:root {
+  --br-page-bg: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f8fafc 100%);
+  --br-panel-bg: rgba(255,255,255,0.86);
+  --br-panel-border: rgba(30,58,95,0.16);
+  --br-input-bg: #ffffff;
+  --br-input-text: #0f172a;
+  --br-input-placeholder: #64748b;
+  --br-card-bg: #ffffff;
+  --br-card-image-bg: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  --br-card-title: #0f172a;
+  --br-card-meta: #475569;
+  --br-count: #475569;
+}
+
+.dark {
+  --br-page-bg: linear-gradient(135deg, #0a0a15 0%, #0f1629 50%, #0a0a15 100%);
+  --br-panel-bg: rgba(15,15,26,0.85);
+  --br-panel-border: rgba(249,115,22,0.2);
+  --br-input-bg: #1a1a2e;
+  --br-input-text: #ffffff;
+  --br-input-placeholder: #64748b;
+  --br-card-bg: #0f0f1a;
+  --br-card-image-bg: linear-gradient(135deg, #1a1a2e, #0f1629);
+  --br-card-title: #ffffff;
+  --br-card-meta: #94a3b8;
+  --br-count: #94a3b8;
+}
+
 /* ─── Page wrapper ─── */
 .br-page {
   min-height: 100%;
-  background: linear-gradient(135deg, #0a0a15 0%, #0f1629 50%, #0a0a15 100%);
+  background: var(--br-page-bg);
   padding: 24px;
   border-radius: 12px;
 }
 
 /* ─── Filter bar ─── */
 .br-filter-bar {
-  background: rgba(15,15,26,0.85);
-  border: 1px solid rgba(249,115,22,0.2);
+  background: var(--br-panel-bg);
+  border: 1px solid var(--br-panel-border);
   border-radius: 14px;
   padding: 20px 24px;
   margin-bottom: 28px;
@@ -69,17 +97,17 @@ const PAGE_STYLES = `
 .br-search-wrap:focus-within .br-search-icon { color: #f97316; }
 .br-search-input {
   width: 100%;
-  background: #1a1a2e;
+  background: var(--br-input-bg);
   border: 1px solid rgba(249,115,22,0.3);
   border-radius: 10px;
   padding: 10px 14px 10px 42px;
   font-size: 14px;
-  color: #fff;
+  color: var(--br-input-text);
   outline: none;
   transition: border-color 0.25s ease, box-shadow 0.25s ease;
   font-family: inherit;
 }
-.br-search-input::placeholder { color: #64748b; }
+.br-search-input::placeholder { color: var(--br-input-placeholder); }
 .br-search-input:focus {
   border-color: #f97316;
   box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
@@ -93,12 +121,12 @@ const PAGE_STYLES = `
 .br-select {
   appearance: none;
   width: 100%;
-  background: #1a1a2e;
+  background: var(--br-input-bg);
   border: 1px solid rgba(249,115,22,0.3);
   border-radius: 10px;
   padding: 10px 38px 10px 14px;
   font-size: 14px;
-  color: #fff;
+  color: var(--br-input-text);
   outline: none;
   cursor: pointer;
   font-family: inherit;
@@ -108,7 +136,7 @@ const PAGE_STYLES = `
   border-color: #f97316;
   box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
 }
-.br-select option { background: #1a1a2e; color: #fff; }
+.br-select option { background: var(--br-input-bg); color: var(--br-input-text); }
 .br-select-chevron {
   position: absolute;
   right: 12px;
@@ -119,7 +147,7 @@ const PAGE_STYLES = `
 }
 
 .br-count {
-  color: #94a3b8;
+  color: var(--br-count);
   font-size: 13px;
   white-space: nowrap;
 }
@@ -151,7 +179,7 @@ const PAGE_STYLES = `
     0 0 60px rgba(30,58,95,0.25);
 }
 .br-card-inner {
-  background: #0f0f1a;
+  background: var(--br-card-bg);
   border-radius: 16px;
   overflow: hidden;
   display: flex;
@@ -163,7 +191,7 @@ const PAGE_STYLES = `
 .br-card-image {
   position: relative;
   height: 192px;
-  background: linear-gradient(135deg, #1a1a2e, #0f1629);
+  background: var(--br-card-image-bg);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -226,7 +254,7 @@ const PAGE_STYLES = `
 .br-card-name {
   font-size: 17px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--br-card-title);
   margin: 0;
   line-height: 1.3;
   overflow: hidden;
@@ -251,7 +279,7 @@ const PAGE_STYLES = `
   align-items: center;
   gap: 7px;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--br-card-meta);
 }
 .br-meta-icon {
   color: #f97316;
@@ -323,7 +351,6 @@ const TYPE_LABELS = {
 };
 
 export const BrowseResources = () => {
-  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [resources, setResources] = useState([]);
@@ -386,8 +413,8 @@ export const BrowseResources = () => {
     if (filters.search) {
       filtered = filtered.filter(
         (r) =>
-          r.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-          r.location.toLowerCase().includes(filters.search.toLowerCase())
+          (r.name || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+          (r.location || '').toLowerCase().includes(filters.search.toLowerCase())
       );
     }
 
@@ -462,13 +489,16 @@ export const BrowseResources = () => {
           <div className="br-grid">
             {filteredResources.map((resource) => {
               const isActive = resource.status === 'ACTIVE';
+              const resourceId = resource.id || resource.resource_id;
+              const resourceType = resource.type || 'UNKNOWN';
+              const resourceTypeLabel = TYPE_LABELS[resourceType] || resourceType.replaceAll('_', ' ');
 
               return (
                 <div
-                  key={resource.id}
+                  key={resourceId}
                   className="br-card-outer"
-                  onClick={() => navigate(`/resources/${resource.id}`)}
-                  data-testid={`resource-card-${resource.id}`}
+                  onClick={() => navigate(`/resources/${resourceId}`)}
+                  data-testid={`resource-card-${resourceId}`}
                 >
                   <div className="br-card-inner">
                     <div className="br-card-image">
@@ -498,23 +528,23 @@ export const BrowseResources = () => {
 
                     <div className="br-card-body">
                       <h3 className="br-card-name" title={resource.name}>
-                        {resource.name}
+                        {resource.name || 'Unnamed Resource'}
                       </h3>
 
                       <div>
                         <span className="br-type-badge">
-                          {TYPE_LABELS[resource.type] || resource.type.replace('_', ' ')}
+                          {resourceTypeLabel}
                         </span>
                       </div>
 
                       <div className="br-meta-row">
                         <MapPin size={14} className="br-meta-icon" />
-                        {resource.location}
+                        {resource.location || 'Location not specified'}
                       </div>
 
                       <div className="br-meta-row">
                         <Users size={14} className="br-meta-icon" />
-                        Capacity: {resource.capacity}
+                        Capacity: {resource.capacity ?? 'N/A'}
                       </div>
                     </div>
 
@@ -523,10 +553,10 @@ export const BrowseResources = () => {
                         className="br-btn-primary"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/resources/${resource.id}`, { state: { autoOpenBooking: true } });
+                          navigate(`/resources/${resourceId}`, { state: { autoOpenBooking: true } });
                         }}
                         disabled={resource.status !== 'ACTIVE'}
-                        data-testid={`book-now-btn-${resource.id}`}
+                        data-testid={`book-now-btn-${resourceId}`}
                       >
                         Book Now
                       </button>
@@ -535,9 +565,9 @@ export const BrowseResources = () => {
                         className="br-btn-outline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/resources/${resource.id}`);
+                          navigate(`/resources/${resourceId}`);
                         }}
-                        data-testid={`view-details-btn-${resource.id}`}
+                        data-testid={`view-details-btn-${resourceId}`}
                       >
                         View Details
                       </button>
