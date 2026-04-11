@@ -334,6 +334,7 @@ export const BrowseResources = () => {
     injectBrStyles();
   }, []);
 
+//Upon mounting, this page
   useEffect(() => {
     fetchResources();
   }, []);
@@ -357,7 +358,8 @@ export const BrowseResources = () => {
       window.removeEventListener('focus', handleVisibility);
     };
   }, []);
-
+  
+//This means the frontend requests all resources from the backend, then stores them in state
   const fetchResources = async () => {
     try {
       const data = await resourceService.getAll();
