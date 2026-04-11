@@ -4,11 +4,15 @@ import { adminService } from '@/services/adminService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/common/Spinner';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { formatDate } from '@/utils/formatDate';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle, Lock } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 
 const ROLE_COLORS = {
   USER: 'bg-blue-100 text-blue-800',
@@ -27,8 +31,15 @@ export const UserManagement = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [statusDialog, setStatusDialog] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [action, setAction] = useState(''); // 'suspend' or 'activate'
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    role: 'USER',
+    active: true,
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -49,6 +60,51 @@ export const UserManagement = () => {
     setSelectedUser(user);
     setAction(actionType);
     setStatusDialog(true);
+  };
+
+  const openEditDialog = (user) => {
+    setSelectedUser(user);
+    setEditForm({
+      name: user.name || '',
+      email: user.email || '',
+      role: user.role || 'USER',
+      active: Boolean(user.active),
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveUserEdit = async () => {
+    if (!selectedUser) {
+      return;
+    }
+
+    if (!editForm.name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+
+    if (!editForm.email.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      await adminService.updateUser(selectedUser.user_id, {
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        role: editForm.role,
+        active: editForm.active,
+      });
+      toast.success(`${selectedUser.name} has been updated`);
+      setEditDialogOpen(false);
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Failed to update user');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const confirmStatusChange = async () => {
@@ -125,19 +181,6 @@ export const UserManagement = () => {
           </Card>
         </div>
 
-        {/* Info Banner */}
-        <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-          <div className="flex items-start gap-3">
-            <Lock className="h-5 w-5 text-indigo-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-indigo-900">User Roles Are Protected</h3>
-              <p className="text-sm text-indigo-800 mt-1">
-                Admin users cannot change user roles through the management interface. Roles are assigned during registration and can only be modified through backend configuration.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Users Table */}
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardHeader>
@@ -184,6 +227,13 @@ export const UserManagement = () => {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            onClick={() => openEditDialog(user)}
+                            variant="outline"
+                            className="text-xs border-slate-300 text-slate-700 hover:bg-slate-100"
+                          >
+                            Edit
+                          </Button>
                           {user.active ? (
                             <Button
                               onClick={() => openStatusDialog(user, 'suspend')}
@@ -229,6 +279,93 @@ export const UserManagement = () => {
           confirmButtonClass={action === 'suspend' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'}
           disabled={actionLoading}
         />
+
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent
+            overlayClassName="bg-slate-900/75 backdrop-blur-[2px]"
+            className="border border-slate-200 bg-white shadow-2xl"
+          >
+            <DialogHeader>
+              <DialogTitle className="text-slate-900">Edit User</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name" className="text-slate-700">Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                  className="bg-white border-slate-300"
+                  placeholder="Full name"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-email" className="text-slate-700">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                  className="bg-white border-slate-300"
+                  placeholder="user@example.com"
+                />
+              </div>
+
+              <div>
+                <Label className="text-slate-700">Role</Label>
+                <Select
+                  value={editForm.role}
+                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, role: value }))}
+                >
+                  <SelectTrigger className="bg-white border-slate-300">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[10060]">
+                    <SelectItem value="USER">USER</SelectItem>
+                    <SelectItem value="TECHNICIAN">TECHNICIAN</SelectItem>
+                    <SelectItem value="ADMIN">ADMIN</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-slate-700">Status</Label>
+                <Select
+                  value={editForm.active ? 'active' : 'inactive'}
+                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, active: value === 'active' }))}
+                >
+                  <SelectTrigger className="bg-white border-slate-300">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[10060]">
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditDialogOpen(false)}
+                  className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-100"
+                  disabled={actionLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveUserEdit}
+                  className="flex-1 bg-slate-900 text-white hover:bg-slate-800"
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
