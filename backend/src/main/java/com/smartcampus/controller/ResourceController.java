@@ -15,6 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
+//base path
 @RequestMapping("/api/resources")
 @RequiredArgsConstructor
 public class ResourceController {
@@ -25,7 +26,8 @@ public class ResourceController {
         // GET
         // /api/resources?search=lab&type=LAB&location=Block-A&status=ACTIVE&minCapacity=20
         // Accessible by: ALL authenticated roles
-        @GetMapping
+        //Get all resources WITH optional filters ✅
+        @GetMapping   //  /api/resources
         public ResponseEntity<ApiResponse<List<ResourceDTO.Response>>> getAllResources(
                         @RequestParam(required = false) String search,
                         @RequestParam(required = false) String type,
@@ -36,6 +38,7 @@ public class ResourceController {
                 log.info("GET /api/resources - search={}, type={}, location={}, " +
                                 "status={}, minCapacity={}", search, type, location, status, minCapacity);
 
+//Then it returns the response back to the frontend.
                 List<ResourceDTO.Response> resources = resourceService.getAllResources(
                                 search, type, location, status, minCapacity);
 
