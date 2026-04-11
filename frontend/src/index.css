@@ -107,6 +107,47 @@ code {
   }
 }
 
+@layer utilities {
+  /* Keep legacy light-only utility classes readable when dark mode is active. */
+  .dark .bg-white {
+    background-color: rgb(15 23 42) !important;
+  }
+
+  .dark .bg-slate-100,
+  .dark .bg-slate-50,
+  .dark .hover\:bg-slate-100:hover,
+  .dark .hover\:bg-slate-50:hover {
+    background-color: rgb(30 41 59) !important;
+  }
+
+  .dark .border-slate-200,
+  .dark .border-slate-100,
+  .dark .border-slate-300,
+  .dark .hover\:border-slate-400:hover {
+    border-color: rgb(51 65 85) !important;
+  }
+
+  .dark .text-slate-900 {
+    color: rgb(241 245 249) !important;
+  }
+
+  .dark .text-slate-700,
+  .dark .text-slate-600 {
+    color: rgb(148 163 184) !important;
+  }
+
+  .dark .text-slate-500,
+  .dark .text-slate-400,
+  .dark .placeholder\:text-slate-400::placeholder,
+  .dark .placeholder\:text-slate-500::placeholder {
+    color: rgb(148 163 184) !important;
+  }
+
+  .dark .bg-\[\#f8fafc\] {
+    background-color: rgb(15 17 26) !important;
+  }
+}
+
 /* Custom styles for futuristic sidebar */
 @keyframes gradient-x {
   0% { background-position: 0% 50%; }
